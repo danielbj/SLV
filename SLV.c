@@ -18,6 +18,7 @@
 #define JOBS_PR_MODULE (15)
 #define MODULES_PR_DAY (6)
 #define DAYS_PR_WEEK (5)
+#define ELIMINATION_PART (0.5)
 
 //Enumerations
 enum subjects {
@@ -64,11 +65,17 @@ struct week {
     struct day days[DAYS_PR_WEEK];
 };
 
+struct fitted_population {
+    int week_fitness;
+    struct week *week_pointer;
+};
+
 //Function prototypes
 struct week* initialize_weeks(int n);
 void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
 void print_fittest_week(const struct week* population_pool);
+int compare_fitness(const void *a, const void *b);
 
 
 
@@ -94,7 +101,45 @@ struct week* initialize_weeks(int n) {
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
+    int i;
+    double amount_killed=0;
+    struct week temporary;
+    struct fitted_population *population_fitnesses;
+
+    population_fitnesses = (struct fitted_population *)malloc(sizeof(fitted_population)*n);
+
+    amount_killed = n*ELIMINATION_PART;
+
+    //Fills array with fitnesses.
+    for(i=0;i<n;i++){
+        population_fitnesses[i].week_fitness = fitness_of_week(population_pool[i]);
+        population_fitnesses[i].*week_pointer = population_pool[i];
+    }
+
+    qsort(population_fitnesses,n,sizeof(struct fitted_population),COMPAREFUNCTION);
+
+
+    free(population_fitnesses);
     return;
+}
+
+int compare_fitness(const void *a, const void *b){
+    struct fitted_population *ca = (struct fitted_population *)a;
+    struct fitted_population *cb = (struct fitted_population *)b;
+    
+    /*
+                //This is the helping function for qsort, which compares two cards.
+                int card_compare(const void* a, const void* b){
+                struct card *cast_a = (struct card *)a;
+                struct card *cast_b = (struct card *)b;
+  
+                if(cast_a->color == cast_b->color)       //Here the colors are compared, and the return value sign (+/-/0)
+                return cast_a->value - cast_b->value;  //will depend on what value is greatest.
+
+                  else                                      //Here the return value sign(+/-/0) depends on the greatest
+                return cast_a->color - cast_b->color;   //color, (of the enumeration types).    */ 
+
+
 }
 
 

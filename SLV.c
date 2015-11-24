@@ -85,9 +85,41 @@ int main(int argc, char *argv[]) {
 
 //Input + generation + sanitation
 //Initialize n weeks with jobs from jobs.txt
-struct week* initialize_weeks(int n) {
-    return;
+//Returns NULL if error.
+struct week* initialize_weeks(int number_of_weeks) {
+    
+    //FUNCTION: Read data from file to local structs
+    
+    
+    
+    
+    //FUNCTION: Randomly insert, regarding hard limits
+    
+    
+    
+    return 0;
 }
+
+
+
+//Function for reading data from jobs.txt to jobs structure.
+//Insures that last element is NULL (teacher == 0).
+struct job* read_jobs() {
+    
+    return 0;
+}
+
+
+
+//Function for generating weeks, by randomly inserting jobs in struct, removing teacher conflicts 
+struct week* insert_jobs(int number_of_weeks) {
+    
+    return 0;
+}
+
+
+
+
 
 
 
@@ -101,7 +133,7 @@ void next_generation(struct week* population_pool, unsigned int n) {
 
 //Function for finding fitness of one week.
 int fitness_of_week(const struct week* individual) {
-    return;
+    return 0;
 }
 
 

@@ -19,6 +19,9 @@
 #define MODULES_PR_DAY (6)
 #define DAYS_PR_WEEK (5)
 #define ELIMINATION_PART (0.5)
+#define MUTATION_CONSTANT 0.10
+#define DAY_TO_SWAP1 1
+#define DAY_TO_SWAP2 5
 
 //Enumerations
 enum subjects {
@@ -101,33 +104,76 @@ struct week* initialize_weeks(int n) {
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
-    int i;
-    double amount_killed=0;
-    struct week temporary;
+    int i,j,d,m, random_number_1=-123, random_number_2=-123,
+        amount_killed=0;
+    struct week temporary_week;
     struct fitted_population *population_fitnesses;
 
-    population_fitnesses = (struct fitted_population *)malloc(sizeof(fitted_population)*n);
+    population_fitnesses = (struct fitted_population *)malloc(sizeof(struct fitted_population) * n);
 
     amount_killed = n*ELIMINATION_PART;
 
     //Fills array with fitnesses.
     for(i=0;i<n;i++){
-        population_fitnesses[i].week_fitness = fitness_of_week(population_pool[i]);
-        population_fitnesses[i].*week_pointer = population_pool[i];
+        population_fitnesses[i].week_fitness = fitness_of_week(&population_pool[i]);
+        population_fitnesses[i].week_pointer = &population_pool[i];
     }
 
-    qsort(population_fitnesses,n,sizeof(struct fitted_population),COMPAREFUNCTION);
+    qsort(population_fitnesses,n,sizeof(struct fitted_population),compare_fitness);
 
+    for(j=0; j < amount_killed; j++){
+        random_number_1 = rand()%amount_killed + amount_killed;
+        random_number_2 = rand()%amount_killed + amount_killed;
+
+        if(random_number_1 < n * MUTATION_CONSTANT + amount_killed){ //Mutation.
+            //intitialize temporary week.
+            for(d=0; d < DAYS_PR_WEEK; d++){
+                temporary_week.days[d] = population_fitnesses[random_number_1].week_pointer->days[d];
+            }
+
+            //Mutation
+            temporary_week.days[DAY_TO_SWAP1] = population_fitnesses[random_number_1].week_pointer->days[DAY_TO_SWAP2];
+            temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[random_number_1].week_pointer->days[DAY_TO_SWAP1];
+            
+            //make new individual
+            population_fitnesses[j].week_pointer[j] = temporary_week; //FIX
+        }
+        else{
+            //These loops mixes days and modules into a new week.
+            for(d=0; d < DAYS_PR_WEEK; d++){
+                for(m=0; m < MODULES_PR_DAY; m++){ 
+                    if(0 <= d && d < 2){
+                        if(0 <= m && m <3){
+                            temporary_week.days[d].modules[m] = population_fitnesses[random_number_1].week_pointer->days[d].modules[m];
+                        }
+                        else{
+                            temporary_week.days[d].modules[m] = population_fitnesses[random_number_2].week_pointer->days[d].modules[m];
+                        }
+                    }
+                    else{
+                        if(0 <= m && m <3){
+                            temporary_week.days[d].modules[m] = population_fitnesses[random_number_2].week_pointer->days[d].modules[m];
+                        }
+                        else{
+                            temporary_week.days[d].modules[m] = population_fitnesses[random_number_1].week_pointer->days[d].modules[m];
+                        }
+                    }
+                }
+            }
+            //make new individual on element j, which is being discarded.
+            population_fitnesses[j].week_pointer[j] = temporary_week; //FIX
+        }
+
+    }
 
     free(population_fitnesses);
-    return;
 }
 
 int compare_fitness(const void *a, const void *b){
     struct fitted_population *ca = (struct fitted_population *)a;
     struct fitted_population *cb = (struct fitted_population *)b;
     
-        return *ca->week_fitness - *cb->week_fitness;
+        return ca->week_fitness - cb->week_fitness;
 }
 
 

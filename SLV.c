@@ -127,21 +127,8 @@ int compare_fitness(const void *a, const void *b){
     struct fitted_population *ca = (struct fitted_population *)a;
     struct fitted_population *cb = (struct fitted_population *)b;
     
-    /*
-                //This is the helping function for qsort, which compares two cards.
-                int card_compare(const void* a, const void* b){
-                struct card *cast_a = (struct card *)a;
-                struct card *cast_b = (struct card *)b;
-  
-                if(cast_a->color == cast_b->color)       //Here the colors are compared, and the return value sign (+/-/0)
-                return cast_a->value - cast_b->value;  //will depend on what value is greatest.
-
-                  else                                      //Here the return value sign(+/-/0) depends on the greatest
-                return cast_a->color - cast_b->color;   //color, (of the enumeration types).    */ 
-
-
+        return *ca->week_fitness - *cb->week_fitness;
 }
-
 
 
 //Function for finding fitness of one week.

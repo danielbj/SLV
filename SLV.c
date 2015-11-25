@@ -97,11 +97,48 @@ void next_generation(struct week* population_pool, unsigned int n) {
     return;
 }
 
+/* Krav
+    1: Forberedelse skal ligge tæt på den kommende leksion
+    2: Skriftlige fag tidligt på dagen
+    3: Et sæt af samme fag (2)
+    */
+
+    /*Ombytning af fag i enum subjects for at gøre det mere
+    effektivt at tjekke fagene*/
+
+    /*Hvordan man tilgår det rigtige fag i det rigtige job
+    i det rigtige modul*/
+    /**/
 
 
-//Function for finding fitness of one week.
+
 int fitness_of_week(const struct week* individual) {
-    return;
+    int Fitness_ModuleTime = 0;                     //Placering af fag tidsmæssigt
+    int Fitness_ModuleMultipleLessons = 0;          //To fag i streg
+    int Fitness_PreparationTime = 0;                //Forberedelse ska ligge ved den kommende leksion
+    int i;
+    int j;
+
+    //Skriftlige fag tidligt på dagen funktion
+
+    for (i = 0; i < DAYS_PR_WEEK; i++)
+    {
+        for (j = 0; i < MODULES_PR_DAY; i++)
+        {
+            if (struct week.day.module.job[j].subject < 4 && j < 3)
+            {
+                /*Giv højt antal point*/
+                Fitness_ModuleTime += Magisk Tal;
+            }
+
+            if (struct week.day.module.job[j] == struct week.day.module.job[j+1] && j % 2 == 0)
+            {
+                Fitness_ModuleMultipleLessons += Magisk Tal;
+            }
+        }
+    }
+
+    return (Fitness_ModuleTime + Fitness_ModuleMultipleLessons + Fitness_PreparationTime);
 }
 
 

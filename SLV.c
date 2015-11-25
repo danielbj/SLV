@@ -72,9 +72,7 @@ int generate_week(struct week* week, struct job* job_pool);
 int insert_job_in_week(struct job* job, struct week* week, int day, int module);
 int insert_job_in_module(struct job* job, struct module* module);
 int is_empty_job(struct job* job);
-int is_full_module(struct module* module);
 int is_teacher_conflict(struct module* module, struct job* job);
-
 
 void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
@@ -139,6 +137,9 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
     for (i = 0; i < number_of_weeks; i++) {
         generate_week(&week_pool[i], job_pool);
     }
+    
+    //Free the job pool
+    free(job_pool);
     
     //Return pool of weeks
     return week_pool;
@@ -215,22 +216,6 @@ int insert_job_in_module(struct job* job, struct module* module) {
 //Returns !NULL if empty.
 int is_empty_job(struct job* job) {
     return job->teacher[0][0] == 0;
-}
-
-
-
-//Function for checking if a module is full.
-//Returns !NULL if full.
-int is_full_module(struct module* module) {
-    int i;//loop counter
-    
-    for (i = 0; i < MODULES_PR_DAY; i++) {
-        if (is_empty_job(&module->jobs[i])) {
-            return 0;
-        }
-    }
-    
-    return 1;
 }
 
 

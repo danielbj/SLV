@@ -125,13 +125,13 @@ int fitness_of_week(const struct week* individual) {
     {
         for (j = 0; i < MODULES_PR_DAY; i++)
         {
-            if (struct week.day.module.job[j].subject < 4 && j < 3)
+            if (individual.day[i].module[j].job[].subject < 4 && j < 3)
             {
                 /*Giv højt antal point*/
                 Fitness_ModuleTime += Magisk Tal;
             }
 
-            if (struct week.day.module.job[j] == struct week.day.module.job[j+1] && j % 2 == 0)
+            if (individual.day[i].module[j].job[] == individual.day[i].module[j+1].job[] && j % 2 == 0)
             {
                 Fitness_ModuleMultipleLessons += Magisk Tal;
             }

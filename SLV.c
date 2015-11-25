@@ -66,6 +66,16 @@ struct week {
 
 //Function prototypes
 struct week* initialize_weeks(int n);
+
+struct week* insert_jobs(struct job* job_pool, int number_of_weeks);
+int generate_week(struct week* week, struct job* job_pool);
+int insert_job_in_week(struct job* job, struct week* week, int day, int module);
+int insert_job_in_module(struct job* job, struct module* module);
+int is_empty_job(struct job* job);
+int is_full_module(struct module* module);
+int is_teacher_conflict(struct module* module, struct job* job);
+
+
 void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
 void print_fittest_week(const struct week* population_pool);
@@ -111,11 +121,130 @@ struct job* read_jobs() {
 
 
 
-//Function for generating weeks, by randomly inserting jobs in struct, removing teacher conflicts 
-struct week* insert_jobs(int number_of_weeks) {
+//Function for generating a pool of weeks, by randomly inserting jobs, respecting teacher conflicts.
+//Returns NULL on error.
+struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
+    int i;//loop counter
+    
+    //Allocate memory for pool of generated weeks
+    struct week* week_pool = calloc(number_of_weeks, sizeof(struct week));
+    if (!week_pool) {
+        return 0;
+    }
+    
+    //seed random number generator
+    srand(time(0));
+    
+    //Generate n weeks
+    for (i = 0; i < number_of_weeks; i++) {
+        generate_week(&week_pool[i], job_pool);
+    }
+    
+    //Return pool of weeks
+    return week_pool;
+}
+
+
+
+//Function for randomly generating one week from a pool of jobs.
+//Returns NULL if error.
+int generate_week(struct week* week, struct job* job_pool) {
+    int random_day, random_module;//For storing random indexes
+    int i = 0;//job pool index
+    
+    while (!is_empty_job(&job_pool[i])) {
+        random_day = rand() % DAYS_PR_WEEK;//Select a random day
+        random_module = rand() % MODULES_PR_DAY;//Select a random module
+        
+        if (!insert_job_in_week(&job_pool[i], week, random_day, random_module)) {
+            return 0;
+        } else {
+            i++;
+        }
+    }
+    
+    return 1;
+}
+
+
+//Function for placing a job in a week.
+//The job will be inserted in the first free module, where no teacher conflicts appears.
+//Returns NULL if error.
+int insert_job_in_week(struct job* job, struct week* week, int day, int module) {
+    int d_day, d_module;//Delta-values for offsetting day and module.
+    struct module* current_module;//For holding the module currently being tested for insertion.
+    
+    for (d_day = 0; d_day < DAYS_PR_WEEK; d_day++) {
+        for (d_module = 0; d_module < MODULES_PR_DAY; d_module++) {
+            current_module = &week->days[(day + d_day) % DAYS_PR_WEEK].modules[(module + d_module) % MODULES_PR_DAY];
+            if (insert_job_in_module(job, current_module)) {
+                return 1;
+            }
+        }
+    }
     
     return 0;
 }
+
+
+//Inserts a job in a module.
+//Returns NULL if error.
+int insert_job_in_module(struct job* job, struct module* module) {
+    
+    int i;//loop counter
+    
+    //Check for teacher conflicts.
+    if (is_teacher_conflict(module, job)) {
+        return 0;
+    }
+    
+    //Insert job in first free entry
+    for (i = 0; i < JOBS_PR_MODULE; i++) {
+        if (is_empty_job(&module->jobs[i])) {
+            module->jobs[i] = *job;
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
+
+
+//Function for checking if a job is empty.
+//Returns !NULL if empty.
+int is_empty_job(struct job* job) {
+    return job->teacher[0][0] == 0;
+}
+
+
+
+//Function for checking if a module is full.
+//Returns !NULL if full.
+int is_full_module(struct module* module) {
+    int i;//loop counter
+    
+    for (i = 0; i < MODULES_PR_DAY; i++) {
+        if (is_empty_job(&module->jobs[i])) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+
+
+//Function for checking for teacher conflicts.
+//Returns !NULL if conflict.
+int is_teacher_conflict(struct module* module, struct job* job) {
+    
+}
+
+
+
+
+
 
 
 

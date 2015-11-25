@@ -79,7 +79,7 @@ void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
 void print_fittest_week(const struct week* population_pool);
 int compare_fitness(const void *a, const void *b);
-
+struct fitted population *init_array_fitness_weeks(struct week* population_pool, unsigned int n);
 
 
 //main function
@@ -109,21 +109,15 @@ void next_generation(struct week* population_pool, unsigned int n) {
     struct week temporary_week;
     struct fitted_population *population_fitnesses;
 
-    population_fitnesses = (struct fitted_population *)malloc(sizeof(struct fitted_population) * n);
+    population_fitnesses = init_array_fitness_weeks(population_pool,n);
 
     amount_killed = n*ELIMINATION_PART;
-
-    //Fills array with fitnesses.
-    for(i=0;i<n;i++){
-        population_fitnesses[i].week_fitness = fitness_of_week(&population_pool[i]);
-        population_fitnesses[i].week_pointer = &population_pool[i];
-    }
 
     qsort(population_fitnesses,n,sizeof(struct fitted_population),compare_fitness);
 
     for(j=0; j < amount_killed; j++){
-        random_number_1 = rand()%amount_killed + amount_killed;
-        random_number_2 = rand()%amount_killed + amount_killed;
+        random_number_1 = rand()%amount_killed + amount_killed; //Benjamin 
+        random_number_2 = rand()%amount_killed + amount_killed; //Benjamin
 
         if(random_number_1 < n * MUTATION_CONSTANT + amount_killed){ //Mutation.
             //intitialize temporary week.
@@ -176,6 +170,20 @@ int compare_fitness(const void *a, const void *b){
         return ca->week_fitness - cb->week_fitness;
 }
 
+struct fitted population *init_array_fitness_weeks(struct week* population_pool, unsigned int n){
+    int i;
+    struct fitted_population *population_fitnesses;
+
+
+    population_fitnesses = (struct fitted_population *)malloc(sizeof(struct fitted_population) * n)
+    //Fills array with fitnesses.
+    for(i=0;i<n;i++){
+        population_fitnesses[i].week_fitness = fitness_of_week(&population_pool[i]); 
+        population_fitnesses[i].week_pointer = &population_pool[i];
+    }
+
+    return population_fitnesses;
+}
 
 //Function for finding fitness of one week.
 int fitness_of_week(const struct week* individual) {

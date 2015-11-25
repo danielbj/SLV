@@ -21,25 +21,32 @@
 
 //Enumerations
 enum subjects {
-    art,        //billedkunst
-    biology,    //biologi
+    //Hard Subjects - 4 
+    math,       //matematik
     danish,     //dansk
     english,    //engelsk
-    physics,    //fysik
-    geography,  //geografi
-    history,    //historie
-    crafting,   //håndarbejde
-    phys_ed,    //idræt
-    classtime,  //klassens time
-    religion,   //kristendomskundskab
-    cooking,    //hjemkundskab
-    math,       //matematik
-    music,      //musik
-    nature,     //natur-teknik
-    socialstud, //samfundsfag
-    woodwork,   //sløjd
     german,     //tysk
+
+    //Medium subjects - 7
+    physics,    //fysik
+    nature,     //natur-teknik
+    biology,    //biologi
+    history,    //historie
+    religion,   //kristendomskundskab
+    geography,  //geografi
+    socialstud, //samfundsfag
+
+    //Soft subjects - 8
+    classtime,  //klassens time
+    art,        //billedkunst
+    crafting,   //håndarbejde
+    music,      //musik
+    cooking,    //hjemkundskab
+    woodwork,   //sløjd
+    phys_ed,    //idræt
     elective,    //valgfag
+
+    //Special subjects - 1
     prep        //forberedelsestid
 };
 
@@ -97,11 +104,56 @@ void next_generation(struct week* population_pool, unsigned int n) {
     return;
 }
 
+/* Krav
+    1: Forberedelse skal ligge tæt på den kommende leksion
+    2: Skriftlige fag tidligt på dagen
+    3: Et sæt af samme fag (2)
+    */
+
+    /*Ombytning af fag i enum subjects for at gøre det mere
+    effektivt at tjekke fagene*/
+
+    /*Hvordan man tilgår det rigtige fag i det rigtige job
+    i det rigtige modul*/
+    /**/
 
 
-//Function for finding fitness of one week.
-int fitness_of_week(const struct week* individual) {
-    return;
+
+int fitness_of_week(const struct week* individual) {    
+    int Fitness_ModuleTime = 0;                     //Placering af fag tidsmæssigt
+    int Fitness_ModuleMultipleLessons = 0;          //To fag i streg
+    int Fitness_PreparationTime = 0;                //Forberedelse ska ligge ved den kommende leksion
+    int i;
+    int j;
+    int k;
+
+    for (i = 0; i < DAYS_PR_WEEK; i++) {
+        for (j = 0; i < MODULES_PR_DAY; j++) {
+            for (k = 0; k < JOBS_PR_MODULE; k++) {
+
+                fitness_function_preparation_time(individual, i, j , k);
+
+                fitness_function_module_time(individual, i, j, k);
+
+                if (individual.day[i].module[j].job[] == individual.day[i].module[j+1].job[] && j % 2 == 0) {
+                    Fitness_ModuleMultipleLessons += Magisk Tal;
+                }
+            }
+        }
+    }
+
+    return (Fitness_ModuleTime + Fitness_ModuleMultipleLessons + Fitness_PreparationTime);
+}
+
+fitness_function_preparation_time(const struct week* individual, int i, int j, int k) {
+
+}
+
+fitness_function_module_time(const struct week* individual, int i, int j, int k) {
+    if (individual.day[i].module[j].job[k].subject < 4 && j < 3) {
+        //Giv højt antal point
+        Fitness_ModuleTime += Magisk Tal;
+    }
 }
 
 

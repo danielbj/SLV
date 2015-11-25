@@ -79,6 +79,7 @@ void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
 void print_fittest_week(const struct week* population_pool);
 int compare_fitness(const void *a, const void *b);
+int gene_rand_num(int amount_killed);
 
 
 
@@ -122,8 +123,10 @@ void next_generation(struct week* population_pool, unsigned int n) {
     qsort(population_fitnesses,n,sizeof(struct fitted_population),compare_fitness);
 
     for(j=0; j < amount_killed; j++){
-        random_number_1 = rand()%amount_killed + amount_killed;
-        random_number_2 = rand()%amount_killed + amount_killed;
+        gene_rand_num();                                        //Benjamins funktion af nedenstående
+
+        random_number_1 = rand()%amount_killed + amount_killed; //Benjamin
+        random_number_2 = rand()%amount_killed + amount_killed; //Benjamin
 
         if(random_number_1 < n * MUTATION_CONSTANT + amount_killed){ //Mutation.
             //intitialize temporary week.
@@ -189,6 +192,12 @@ void print_fittest_week(const struct week* population_pool) {
     return;
 }
 
+//Function for 
+int gene_rand_num(int amount_killed)
+{
+    rand()%amount_killed + amount_killed;
+    return amount_killed;
+}
 
 
 

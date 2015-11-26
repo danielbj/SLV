@@ -135,7 +135,9 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
     
     //Generate n weeks
     for (i = 0; i < number_of_weeks; i++) {
-        generate_week(&week_pool[i], job_pool);
+        if (!generate_week(&week_pool[i], job_pool)) {
+            return 0;
+        }
     }
     
     //Free the job pool

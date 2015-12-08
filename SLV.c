@@ -228,11 +228,14 @@ int is_empty_job(struct job* job) {
 int is_teacher_conflict(struct module* module, struct job* job) {
     int d_job;//Job index offset
     int d_teacher;//Teacher index offset
+    int d_new_teacher;//New teacher index offset
 
-    for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
-        for (d_teacher = 0; d_teacher < TEACHERS_PR_JOB; d_teacher++) {
-            if () {
-                return 1;
+    for (d_new_teacher = 0; d_new_teacher < TEACHERS_PR_JOB; d_new_teacher++) {
+        for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
+            for (d_teacher = 0; d_teacher < TEACHERS_PR_JOB; d_teacher++) {
+                if (!strcmp(module->jobs[d_job].teacher[d_teacher], job->teacher[d_new_teacher])) {
+                    return 1;
+                }
             }
         }
     }
@@ -247,9 +250,13 @@ int is_teacher_conflict(struct module* module, struct job* job) {
 int is_class_conflict(struct module* module, struct job* job) {
     int d_job;//job index offset
 
-    for (d_day = 0; d_day < JOBS_PR_MODULE; d_day++) {
-        //TODO
+    for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
+        if(!strcmp(module->jobs[d_job].class, job->class)) {
+            return 1;
+        }
     }
+
+    return 0;
 }
 
 

@@ -120,9 +120,9 @@ void next_generation(struct week* population_pool, unsigned int n) {
 
 
 int fitness_of_week(const struct week* individual) {    
-    int Fitness_ModuleTime = 0;                     //Placering af fag tidsmæssigt
-    int Fitness_ModuleMultipleLessons = 0;          //To fag i streg
-    int Fitness_PreparationTime = 0;                //Forberedelse skal ligge ved den kommende leksion  goodaw
+    int fitness_module_time = 0;                     //Placering af fag tidsmæssigt
+    int fitness_multiple_lessons = 0;               //To fag i streg
+    int fitness_preparation_time = 0;                //Forberedelse skal ligge ved den kommende leksion  goodaw
     int i;
     int j;
     int k;
@@ -131,29 +131,28 @@ int fitness_of_week(const struct week* individual) {
         for (j = 0; i < MODULES_PR_DAY; j++) {
             for (k = 0; k < JOBS_PR_MODULE; k++) {
                 
-                Fitness_ModuleTime = fitness_function_module_time(individual, i, j, k);
+                fitness_module_time = fitness_function_module_time(individual, i, j, k);
 
-                Fitness_ModuleMultipleLessons = fitness_function_mulitiple_lessons(individual, i, j, k);
+                fitness_multiple_lessons = fitness_function_mulitiple_lessons(individual, i, j, k);
             }
         }
     }
-    Fitness_PreparationTime = fitness_function_preparation_time(individual);
+    //fitness_PreparationTime = fitness_function_preparation_time(individual);
 
-    return (Fitness_ModuleTime + Fitness_ModuleMultipleLessons + Fitness_PreparationTime);
+    return (fitness_module_time + fitness_multiple_lessons + fitness_preparation_time);
 }
-
+/*
 int fitness_function_preparation_time(const struct week* individual) {
     int fitness_preparation_time;
-    int i, j, k, h;
+    int i, j, k;
 
-        for (i = DAYS_PR_WEEK; i < 0; i-) {
+        for (i = DAYS_PR_WEEK; i < 0; i--) {
             for (j = MODULES_PR_DAY; j < 0; j--) {
                 for (k = JOBS_PR_MODULE; k < 0; k--) {
-                    if(individual.day[i].module[j].job[k].subject < 19 && individual.day[i].module[j].job[k].prep_confirmed == 0 ){
-                        individual.day[i].module[j].job[k].prep_confirmed = 1; //selve preptimen
-                        individual.day[i].module[j].job[k].prep_confirmed = 1; //den første lektion
-                        individual.day[i].module[j].job[k].prep_confirmed = 1; //den anden lektion
-                        h++;
+                    if(individual->day[i]modules[j].jobs[k].subject == prep && individual->days[i].modules[j].jobs[k].prep_confirmed == 0 ){
+                        individual->days[i].modules[j].jobs[k].prep_confirmed = 1; //selve preptimen
+                        individual->days[i].modules[j].jobs[k].prep_confirmed = 1; //den første lektion
+                        individual->days[i].modules[j].jobs[k].prep_confirmed = 1; //den anden lektion
                         i = DAYS_PR_WEEK;
                         j = MODULES_PR_DAY;
                         k = JOBS_PR_MODULE;
@@ -162,59 +161,57 @@ int fitness_function_preparation_time(const struct week* individual) {
             }
         }
     }
-
-
-
     return fitness_preparation_time;
 }
+*/
 
 int fitness_function_module_time(const struct week* individual, int i, int j, int k) {
-    int fitness_module_time;
+    int fitness_modules_time;
 
-    if (individual.day[i].module[j].job[k].subject < 4 && j < 2) {
-        Fitness_ModuleTime = Magisk Tal;
+    if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 2) {
+        fitness_modules_time = 3;
     }
-    else if individual.day[i].module[j].job[k].subject < 4 && j < 4) {
-        Fitness_ModuleTime = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 4) {
+        fitness_modules_time = 2;
     }
-    else if individual.day[i].module[j].job[k].subject < 4 && j < 6) {
-        Fitness_ModuleTime = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 6) {
+        fitness_modules_time = 1;
     }
 
     
-    if (individual.day[i].module[j].job[k].subject => 4 && individual.day[i].module[j].job[k].subject < 11 && j < 2) {
-        Fitness_ModuleTime = Magisk Tal;
+    if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 2) {
+        fitness_modules_time = 2;
     }
-    else if (individual.day[i].module[j].job[k].subject => 4 && individual.day[i].module[j].job[k].subject < 11 && j < 4) {
-        Fitness_ModuleTime = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 4) {
+        fitness_modules_time = 3;
     }
-    else if (individual.day[i].module[j].job[k].subject => 4 && individual.day[i].module[j].job[k].subject < 11 && j < 6) {
-        Fitness_ModuleTime = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 6) {
+        fitness_modules_time = 1;
     }
 
 
-    if (individual.day[i].module[j].job[k].subject => 4 && individual.day[i].module[j].job[k].subject < 19 && j < 2) {
-    Fitness_ModuleTime = Magisk Tal;
+    if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 2) {
+        fitness_modules_time = 1;
     }
-    else if (individual.day[i].module[j].job[k].subject => 4 && individual.day[i].module[j].job[k].subject < 19 && j < 4) {
-        Fitness_ModuleTime = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 4) {
+        fitness_modules_time = 2;
     }
-    else if (individual.day[i].module[j].job[k].subject => 4 && individual.day[i].module[j].job[k].subject < 19 && j < 6) {
-        Fitness_ModuleTime = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 6) {
+        fitness_modules_time = 3;
     }
+return fitness_modules_time;
 }
-return Fitness_ModuleTime;
 
 int fitness_function_mulitiple_lessons(const struct week* individual, int i, int j, int k){
     int fitness_multiple_lessons;
     
-    if (individual.day[i].module[j].job[k].subject == individual.day[i].module[j+1].job[k].subject && 
-        individual.day[i].module[j].job[k].class == individual.day[i].module[j+1].job[k].class && j % 2 == 0) {
-    fitness_multiple_lessons = Magisk Tal;
+    if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject && 
+        individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[j+1].jobs[k].class && j % 2 == 0) {
+    fitness_multiple_lessons = 6;
     }
-    else if (individual.day[i].module[j].job[k].subject == individual.day[i].module[j+1].job[k].subject && 
-             individual.day[i].module[j].job[k].class == individual.day[i].module[j+1].job[k].class && j % 2 == 1) {
-    fitness_multiple_lessons = Magisk Tal;
+    else if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject && 
+             individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[j+1].jobs[k].class && j % 2 == 1) {
+    fitness_multiple_lessons = 4;
     }
 
 

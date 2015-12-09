@@ -54,7 +54,7 @@ struct job {
     char teacher[TEACHERS_PR_JOB][TEACHER_IDENTIFIER_LENGTH];
     char class[CLASS_IDENTIFIER_LENGTH];
     enum subjects subject;
-    enum subjects sec_subject;
+    int prep_confirmed;
 };
 
 struct module {
@@ -177,7 +177,7 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
 
     for (i = 0; i < n; i++) {
         population_fitnesses[i].roulette_part = 1/(population_fitnesses[i].week_fitness/
-                                                         total_fitness_of_weeks);
+                                                   total_fitness_of_weeks);
     }
 }
 

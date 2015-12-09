@@ -121,7 +121,7 @@ void output(struct week result_week){
     assert(out_ptr != NULL);
 
     fprintf(out_ptr, "The schedule:\n\n");
-    fprintf(out_ptr, "%s%40s%40s%40s%40s\n" "", "TUE", "WED", "THU", "FRI");
+    fprintf(out_ptr, "%s%40s%40s%40s%40s\n" "MAN", "TUE", "WED", "THU", "FRI");
     for(d=0; d < DAYS_PR_WEEK; d++){
         for(m=0; m < MODULES_PR_DAY; m++){
             for (j=0; j < JOBS_PR_MODULE; j++){

@@ -122,7 +122,7 @@ void next_generation(struct week* population_pool, unsigned int n) {
 int fitness_of_week(const struct week* individual) {    
     int Fitness_ModuleTime = 0;                     //Placering af fag tidsmæssigt
     int Fitness_ModuleMultipleLessons = 0;          //To fag i streg
-    int Fitness_PreparationTime = 0;                //Forberedelse skal ligge ved den kommende leksion
+    int Fitness_PreparationTime = 0;                //Forberedelse skal ligge ved den kommende leksion  goodaw
     int i;
     int j;
     int k;

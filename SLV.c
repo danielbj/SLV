@@ -132,7 +132,7 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
     }
 
     //seed random number generator
-    srand(time(0));
+    srand(time(0));//Move to main?!
 
     //Generate n weeks
     for (i = 0; i < number_of_weeks; i++) {
@@ -202,7 +202,7 @@ int insert_job_in_module(struct job* job, struct module* module) {
         return 0;
     }
 
-    //Insert job in first free entry
+    //Insert job in first free job entry
     for (i = 0; i < JOBS_PR_MODULE; i++) {
         if (is_empty_job(&module->jobs[i])) {
             module->jobs[i] = *job;

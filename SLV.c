@@ -152,8 +152,6 @@ char *enum_to_string(enum subjects subject){
             strcpy(temp_string, "geografi"); break;
         case history:
             strcpy(temp_string, "historie"); break;
-        case crafting:
-            strcpy(temp_string, "håndarbejde"); break;
         case phys_ed:
             strcpy(temp_string, "idræt"); break;
         case classtime:

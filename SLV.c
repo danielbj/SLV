@@ -124,55 +124,6 @@ void next_generation(struct week* population_pool, unsigned int n) {
     /**/
 
 
-
-int fitness_of_week(const struct week* individual) {
-    int Fitness_ModuleTime = 0;                     //Placering af fag tidsmæssigt
-    int Fitness_ModuleMultipleLessons = 0;          //To fag i streg
-    int Fitness_PreparationTime = 0;                //Forberedelse ska ligge ved den kommende leksion
-    int i;
-    int j;
-    int k;
-
-    for (i = 0; i < DAYS_PR_WEEK; i++) {
-        for (j = 0; i < MODULES_PR_DAY; j++) {
-            for (k = 0; k < JOBS_PR_MODULE; k++) {
-
-                fitness_function_preparation_time(individual, i, j , k);
-
-                fitness_function_module_time(individual, i, j, k);
-
-                if (individual.day[i].module[j].job[] == individual.day[i].module[j+1].job[] && j % 2 == 0) {
-                    Fitness_ModuleMultipleLessons += Magisk Tal;
-                }
-            }
-        }
-    }
-
-    return (Fitness_ModuleTime + Fitness_ModuleMultipleLessons + Fitness_PreparationTime);
-}
-
-fitness_function_preparation_time(const struct week* individual, int i, int j, int k) {
-
-}
-
-fitness_function_module_time(const struct week* individual, int i, int j, int k) {
-    if (individual.day[i].module[j].job[k].subject < 4 && j < 3) {
-        //Giv højt antal point
-        Fitness_ModuleTime += Magisk Tal;
-    }
-}
-
-
-
-//Output the fittest of weeks in the population pool.
-void print_fittest_week(const struct week* population_pool) {
-    return;
-}
-
-
-
-
-
 int fitness_of_week(const struct week* individual) {
     int fitness_module_time = 0;                     //Placering af fag tidsmæssigt
     int fitness_multiple_lessons = 0;               //To fag i streg

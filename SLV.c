@@ -20,6 +20,7 @@
 #define DAYS_PR_WEEK (5)
 #define MAX_SUBJECT_CHARS (20)
 #define EXPECTED_MIN_SCANS (4)
+#define MAX_LINE_LENGTH (50)
 #define JOB_FILE_NAME "jobs.txt"
 
 //Enumerations
@@ -81,6 +82,8 @@ enum subjects translate_subject(char temp_subject[]);
 //main function
 int main(int argc, char *argv[]) {
 
+
+
     read_jobs();
 
 
@@ -114,11 +117,12 @@ struct job* read_jobs(void) {
     int done = 0;//while-loop condition flag
     int n_insertions;//number of insertions
 
-    //DEBUG
-    FILE* file = fopen("jobs", "r");
+    FILE* file = fopen(JOB_FILE_NAME, "r");
     if (!file) {
         return 0;
     }
+
+    printf("IN READ_JOBS: FILE: %d\n", file);
 
     struct job* job_pool = job_counter(file);
     if (!job_pool) {
@@ -145,6 +149,7 @@ int read_job(struct job* job, FILE* file) {
     int i;//loop counter
     int status = 0;
     int n_insertions;
+    char buffer[MAX_LINE_LENGTH];
     struct job temp_job;
     char temp_subject[MAX_SUBJECT_CHARS];
 
@@ -155,7 +160,11 @@ int read_job(struct job* job, FILE* file) {
     }
 
     //Read one line from the file
-    status = fscanf(file, "%d %s %s %s %s %s \n",
+    if(!fgets(buffer, MAX_LINE_LENGTH, file)) {
+        return 0;
+    }
+
+    status = sscanf(buffer, "%d %s %s %s %s %s",
         &n_insertions,
         temp_subject,
         temp_job.class,
@@ -195,11 +204,19 @@ int read_job(struct job* job, FILE* file) {
 struct job* job_counter(FILE* file) {
     int n_jobs = 0;
     int new;
-    while (fscanf(file, "%d", &new) != EOF) {
+    char buffer[MAX_LINE_LENGTH];
+
+    while(fgets(buffer, MAX_LINE_LENGTH, file)) {
+        sscanf(buffer, "%d", &new);
         n_jobs += new;
+        //DEBUG:
+        printf("%d %d\n", new, n_jobs);
     }
 
+
     struct job* job_pool = malloc(sizeof(struct job) * (n_jobs+1));
+
+    rewind(file);
 
     return job_pool;
 }

@@ -72,7 +72,7 @@ struct week {
 typedef struct fitted_population {
     int week_fitness;
     struct week *week_pointer;
-    int roulette_part;
+    double roulette_part;
 } fitted_population_t;
 
 //Function prototypes
@@ -113,8 +113,8 @@ struct week* initialize_weeks(int n) {
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
-    int i, j, random_number_1=-123, random_number_2=-123,
-        amount_killed=0, amount_living=0, biggest_roulette_part=0,
+    int i, j, random_week_1=-123, random_week_2=-123,
+        amount_killed=0, amount_living=0,
         *individuals_killed;
     fitted_population_t *population_fitnesses;
 
@@ -136,16 +136,16 @@ void next_generation(struct week* population_pool, unsigned int n) {
     //Generates new population to fill out killed individuals.
     //Creating from the surviving indivduals. FIX
     for(j=0; j < amount_killed; j++){
-        random_number_1 = gene_rand_num(amount_living);
-        random_number_2 = gene_rand_num(amount_living);
+        random_week_1 = gene_rand_num(amount_living);
+        random_week_2 = gene_rand_num(amount_living);
 
         //New mutated individual.
-        if(random_number_1 < (n * MUTATION_PART)){
-            mutator(individuals_killed[j], random_number_1, population_fitnesses);
+        if(random_week_1 < (n * MUTATION_PART)){
+            mutator(individuals_killed[j], random_week_1, population_fitnesses);
         }
         //New individual
         else{
-            create_new_individual(individuals_killed[j], random_number_1, random_number_2, population_fitnesses);
+            create_new_individual(individuals_killed[j], random_week_1, random_week_2, population_fitnesses);
         }
 
     }
@@ -165,8 +165,7 @@ void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
     }
 }
 
-//Gives every individual a share of the roulette to be eliminated from.
-//https://en.wikipedia.org/wiki/Fitness_proportionate_selection ***KILDE***
+//Gives every individual a share of the roulette to be eliminated from. 
 void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned int n){
     int i,j, total_fitness_of_weeks = 0;
 
@@ -186,13 +185,14 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
 void individual_picker(fitted_population_t *population_fitnesses,
                        int *individuals_killed, int amount_killed,
                        unsigned int n){
-    int i,j, selector = 0, biggest_roulette_part = 0;
+    int i,j; 
+    double biggest_roulette_part = 0, selector = 0;
 
     biggest_roulette_part = population_fitnesses[n-1].roulette_part;
 
     for(i=0; i < amount_killed;){
         for(j=0; j < n; j++){
-            selector = gene_rand_num(biggest_roulette_part)+1;
+            selector = gene_rand_num(biggest_roulette_part*1000000)/1000000; // FEJL, double og int problem
             if(selector < population_fitnesses[j].roulette_part)
                 individuals_killed[i] = j;
                 i++;

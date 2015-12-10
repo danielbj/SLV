@@ -73,7 +73,6 @@ void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
 void print_fittest_week(const struct week* population_pool);
 
-//prototypes for readerfunction
 struct job* read_jobs(void);
 int read_job(struct job* job, FILE* file);
 struct job* job_counter(FILE* file);
@@ -81,13 +80,6 @@ enum subjects translate_subject(char temp_subject[]);
 
 //main function
 int main(int argc, char *argv[]) {
-
-
-
-    read_jobs();
-
-
-
     return 0;
 }
 
@@ -173,16 +165,6 @@ int read_job(struct job* job, FILE* file) {
         temp_job.teacher[2]
     );
 
-    //DEBUG:
-    printf("\n%d\t%s\t%s\t%s\t%s\t%s\n",
-        n_insertions,
-        temp_subject,
-        temp_job.class,
-        temp_job.teacher[0],
-        temp_job.teacher[1],
-        temp_job.teacher[2]
-    );
-
     //Return if EOF
     if (status < EXPECTED_MIN_SCANS) {
         return 0;
@@ -209,8 +191,6 @@ struct job* job_counter(FILE* file) {
     while(fgets(buffer, MAX_LINE_LENGTH, file)) {
         sscanf(buffer, "%d", &new);
         n_jobs += new;
-        //DEBUG:
-        printf("%d %d\n", new, n_jobs);
     }
 
 

@@ -76,10 +76,7 @@ typedef struct fitted_population {
 } fitted_population_t;
 
 //Function prototypes
-struct week* initialize_weeks(int n);
 void next_generation(struct week* population_pool, unsigned int n);
-int fitness_of_week(const struct week* individual);
-void print_fittest_week(const struct week* population_pool);
 int compare_fitness(const void *a, const void *b);
 void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
                               struct week* population_pool, unsigned int n);
@@ -99,16 +96,6 @@ srand(1);
 
     return 0;
 }
-
-
-
-//Input + generation + sanitation
-//Initialize n weeks with jobs from jobs.txt
-struct week* initialize_weeks(int n) {
-    return;
-}
-
-
 
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
@@ -165,7 +152,7 @@ void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
     }
 }
 
-//Gives every individual a share of the roulette to be eliminated from. 
+//Gives every individual a share of the roulette to be eliminated from.
 void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned int n){
     int i,j, total_fitness_of_weeks = 0;
 
@@ -185,7 +172,7 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
 void individual_picker(fitted_population_t *population_fitnesses,
                        int *individuals_killed, int amount_killed,
                        unsigned int n){
-    int i,j; 
+    int i,j;
     double biggest_roulette_part = 0, selector = 0;
 
     biggest_roulette_part = population_fitnesses[n-1].roulette_part;
@@ -259,16 +246,4 @@ void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *p
     }
      //make new individual on element j, which is being discarded.
     population_fitnesses[j].week_pointer[0] = temporary_week; //FIX week_pointer (evt fyld alle dage)
-}
-
-//Function for finding fitness of one week.
-int fitness_of_week(const struct week* individual) {
-    return;
-}
-
-
-
-//Output the fittest of weeks in the population pool.
-void print_fittest_week(const struct week* population_pool) {
-    return;
 }

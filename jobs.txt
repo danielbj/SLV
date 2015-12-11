@@ -1,99 +1,98 @@
-1	Billedkunst 	AI1A 	KI
-2	Billedkunst 	AI2A 	HM 
-2	Billedkunst 	AI2B 	MD
-2	Biologi 	    7. 	SS 
-2	Biologi 	    8. 	SS 
-1	Biologi 	    9. 	SS 
-9	Dansk       	AI2A 	AH
-11	Dansk 	        AI1A 	CAH
-9	Dansk 	        AI2B 	KK
-9	Dansk 	        AI2A 	PN 
-9	Dansk       	AI2A 	PN 
-7	Dansk 	        7. 	MK 
-7	Dansk 	        8. 	MD 
-7	Dansk 	        9. 	LC 
-7	Dansk 	        6. 	JJ 
-3	Engelsk 	    6. 	MN 
-3	Engelsk 	    7. 	JJ 
-3	Engelsk 	    AI2A 	PN 
-3	Engelsk 	    8. 	MK 
-3	Engelsk 	    9. 	MK 
-3	Engelsk 	    AI2A 	AH
-3	Engelsk 	    AI2B 	MD
-3	Engelsk 	    AI2A 	PN 
-1	Engelsk 	    AI1A 	CAH
-3	Fysik/kemi 	    9. 	MN 
-2	Fysik/kemi 	    7. 	SS 
-2	Fysik/kemi 	    8. 	MN 
-2	Geografi 	    7. 	LC 
-1	Geografi 	    8. 	LC 
-1	Geografi 	    9. 	LC 
-2	Historie 	    8. 	SS 
-2	Historie 	    AI2A 	AH
-2	Historie 	    AI2B 	KK
-2	Historie 	    AI2A 	PN 
-2	Historie 	    6. 	KT 
-2	Historie 	    AI2A 	PN 
-1	Historie 	    7. 	JJ 
-1	Historie 	    9. 	LC 
-2	Historie 	    7. 	JJ  
-2	Idræt 	        8.	LC
-2   Idræt           9.  LC
-4	Idræt 	        AI1A 	CAH
-2	Idræt 	        AI2A 	MD
-2	Idræt 	        6. 	LC 
-2	Idræt 	        7.	LC 
-1	Klassenstid 	9. 	LC 
-1	Klassenstid 	8. 	MD 
-1	Klassenstid 	AI1A 	CAH
-1	Klassenstid 	AI2A 	PN 
-1	Klassenstid 	7. 	MK 
-1	Klassenstid 	6. 	MN 
-1	Klassenstid 	AI2A 	AH
-1	Klassenstid 	AI2B 	KK
-1	Klassenstid 	AI2A 	PN 
-2	Kristendom 	    6. 	JJ 
-1	Kristendom 	    8. 	SS 
-2	Kristendom 	    AI2A 	AH
-2	Kristendom 	    AI2B 	KK
-2	Kristendom 	    AI2A 	PN 
-1	Kristendom 	    AI1A 	KI
-1	Kristendom 	    9. 	SS 
-2	Kristendom 	    AI2A 	PN 
-2	Madkundskab 	6. 	JJ 
-2	Madkundskab 	7. 	JJ 
-5	Matematik 	    8. 	HM 
-5	Matematik 	    6. 	MN 
-5	Matematik 	    AI1A 	CAH
-5	Matematik 	    AI2A 	PN 
-5	Matematik 	    9. 	MN 
-5	Matematik 	    7. 	HM 
-5	Matematik 	    AI2B 	KK
-5	Matematik 	    AI2A 	AH
-5	Matematik 	    AI2A 	PN 
-2	Musik	        6. 	MK 
-2	Musik 	        AI1A 	KI
-2	Musik 	        AI2A 	AH
-2	Musik 	        AI2B 	KK
-2	Musik 	        AI2A 	PN 
-2	Musik 	        AI2A 	PN 
-2	Musik 	        6. 	MD 
-2	Natur/teknik 	AI1A 	CAH
-2	Natur/teknik 	AI2A 	PN 
-2	Natur/teknik 	AI2A 	AH
-2	Natur/teknik 	AI2B 	KK
-2	Natur/teknik 	6. 	JJ 
-2	Natur/teknik 	AI2A 	PN 
-2	Samfundsfag 	9. 	LC 
-2	Samfundsfag 	8. 	LC 
-2	Sløjd 	        4. 	PK 
-2	Sløjd 	        5. 	PK 
-2	Sløjd 	        6. 	PK 
-2	Tysk 	        6. 	KT 
-1	Tysk 	        5. 	HM 
-3	Tysk  	        7. 	KT 
-3	Tysk  	        8. 	KT 
-3	Tysk  	        9. 	HM 
-2	Valghold 	    Valghold1	MK 
-2	Valghold 	    Valghold2	KT 
-2	Valghold 	    Valghold3	JJ 
+1   Billedkunst     AI1A    KI MG 
+2   Billedkunst     AI2A    HM KT 
+2   Billedkunst     AI2B    MD PP 
+2   Biologi     7.  SS 
+2   Biologi     8.  SS 
+1   Biologi     9.  SS 
+9   Dansk   AI2A    AH AS PN
+11  Dansk   AI1A    CAH KI MG 
+9   Dansk   AI2B    KK PP 
+7   Dansk   7.  MK 
+7   Dansk   8.  MD 
+7   Dansk   9.  LC 
+7   Dansk   6.  JJ 
+3   Engelsk     6.  MN 
+3   Engelsk     7.  JJ 
+3   Engelsk     8.  MK 
+3   Engelsk     9.  MK 
+3   Engelsk     AI2A    AH AS PN
+3   Engelsk     AI2B    MD PP 
+1   Engelsk     AI1A    CAH MG 
+3   Fysik/kemi  9.  MN 
+2   Fysik/kemi  7.  SS 
+2   Fysik/kemi  8.  MN 
+2   Geografi    7.  LC 
+1   Geografi    8.  LC 
+1   Geografi    9.  LC 
+2   Historie    8.  SS 
+2   Historie    AI2A    AH HM PN
+2   Historie    AI2B    KK MD 
+2   Historie    6.  KT 
+1   Historie    7.  JJ 
+1   Historie    9.  LC 
+2   Historie    7.  JJ 
+2   IdrÃ¦t   8. LC 
+2   IdrÃ¦t   9. LC
+4   IdrÃ¦t   AI1A    CAH KI 
+2   IdrÃ¦t   AI2A   MD MK PP 
+2   IdrÃ¦t   AI2B   MD MK PP 
+2   IdrÃ¦t   6.    LC 
+2   IdrÃ¦t   7.    LC 
+1   Klassenstid     9.  LC 
+1   Klassenstid     8.  MD 
+1   Klassenstid     AI1A    CAH KI MG 
+1   Klassenstid     7.  MK 
+1   Klassenstid     6.  MN 
+1   Klassenstid     AI2A    AH AS PN
+1   Klassenstid     AI2B    KK PP 
+2   Kristendomskundskab     6.  JJ 
+1   Kristendomskundskab     8.  SS 
+2   Kristendomskundskab     AI2A    AH AS PN
+2   Kristendomskundskab     AI2B    KK PP  
+1   Kristendomskundskab     AI1A    KI MG 
+1   Kristendomskundskab     9.  SS 
+2   Madkundskab     6.  JJ 
+2   Madkundskab     7.  JJ 
+5   Matematik   8.  HM 
+5   Matematik   6.  MN 
+5   Matematik   AI1A    CAH KI MG 
+5   Matematik   9.  MN 
+5   Matematik   7.  HM 
+5   Matematik   AI2B    KK PP 
+5   Matematik   AI2A    AH AS PN
+2   Musik   6.  MK 
+2   Musik   AI1A    KI MD MK 
+2   Musik   AI2A    AH MK PN
+2   Musik   AI2B    KK MD 
+2   Musik   6.  MD 
+2   Natur/teknik    AI1A    CAH MG 
+2   Natur/teknik    AI2A    AH PK PN
+2   Natur/teknik    AI2B    KK PP 
+2   Natur/teknik    6.  JJ 
+2   Samfundsfag     9.  LC 
+2   Samfundsfag     8.  LC 
+2   SlÃ¸jd   6.  PK
+2   Tysk    6.  KT 
+3   Tysk    7.  KT 
+3   Tysk    8.  KT 
+3   Tysk    9.  HM 
+2   Valghold    Vh1   MK 
+2   Valghold    Vh2   KT 
+2   Valghold    Vh3   JJ
+13  Forberedelsestid    a   AH
+10  Forberedelsestid    b   AS
+12  Forberedelsestid    c   CAH
+11  Forberedelsestid    d   HM
+12  Forberedelsestid    e   JJ
+12  Forberedelsestid    f   KI
+12  Forberedelsestid    g   KK
+6   Forberedelsestid    h   KT
+14  Forberedelsestid    i   LC
+11  Forberedelsestid    j   MD
+11  Forberedelsestid    k   MG
+13  Forberedelsestid    l   MK
+10  Forberedelsestid    m   MN
+1   Forberedelsestid    n   PK
+13  Forberedelsestid    o   PN
+6   Forberedelsestid    p   SS
+1  Forberedelsestid    q   PP

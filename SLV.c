@@ -17,7 +17,7 @@
 #define CLASS_IDENTIFIER_LENGTH (4+1)
 #define TEACHERS_PR_JOB (3)
 #define JOBS_PR_MODULE (15)
-#define MODULES_PR_DAY (6)
+#define MODULES_PR_DAY (11)
 #define DAYS_PR_WEEK (5)
 #define MAX_SUBJECT_CHARS (15)
 
@@ -70,112 +70,133 @@ struct week {
 struct week* initialize_weeks(int n);
 void next_generation(struct week* population_pool, unsigned int n);
 int fitness_of_week(const struct week* individual);
-void print_fittest_week(const struct week* fittest_week, char* teacher);
-char *enum_to_string(enum subjects subject);
+
+void print_week(const struct week* fittest_week, char* teacher);
+void print_module(const struct module* module, char* teacher, FILE* out_ptr);
+void print_subject(enum subjects subject, FILE* out_ptr);
 
 
+//main function
+    int main(int argc, char *argv[]){
+    struct week a_week;
+    printf("stsdas\n");
 
-//main function VIL IKKE KØRE ORDENTILIGT
-int main(int argc, char *argv[]){
-struct week a_week;
-printf("stsdas\n");
-/*
-strcpy(a_week.days[0].modules[0].jobs[0].teacher[0], "AH");
-    a_week.days[0].modules[0].jobs[0].subject = art;
-    strcpy(a_week.days[0].modules[0].jobs[0].class, "7.");
-strcpy(a_week.days[1].modules[1].jobs[0].teacher[0], "AH");
-    a_week.days[1].modules[1].jobs[0].subject = biology;
-    strcpy(a_week.days[1].modules[1].jobs[0].class, "8.");
-strcpy(a_week.days[2].modules[3].jobs[0].teacher[0], "AH");
-    a_week.days[2].modules[3].jobs[0].subject = danish;
-    strcpy(a_week.days[2].modules[3].jobs[0].class, "9.");
-strcpy(a_week.days[3].modules[5].jobs[0].teacher[0], "AH");
-    a_week.days[3].modules[5].jobs[0].subject = music;
-    strcpy(a_week.days[3].modules[5].jobs[0].class, "1.");
-strcpy(a_week.days[4].modules[7].jobs[0].teacher[0], "AH");
-    a_week.days[4].modules[7].jobs[0].subject = math;
-    strcpy(a_week.days[4].modules[7].jobs[0].class, "3.");
+    strcpy(a_week.days[0].modules[0].jobs[0].teacher[0], "AH\0");
+        a_week.days[0].modules[0].jobs[0].subject = art;
+        strcpy(a_week.days[0].modules[0].jobs[0].class, "7.\0");
 
-print_fittest_week(&a_week, "AH");
-*/
+    strcpy(a_week.days[1].modules[1].jobs[0].teacher[0], "AH\0");
+        a_week.days[1].modules[1].jobs[0].subject = biology;
+        strcpy(a_week.days[1].modules[1].jobs[0].class, "8.\0");
+
+    strcpy(a_week.days[2].modules[3].jobs[0].teacher[0], "AH\0");
+        a_week.days[2].modules[3].jobs[0].subject = danish;
+        strcpy(a_week.days[2].modules[3].jobs[0].class, "9.\0");
+
+    strcpy(a_week.days[3].modules[5].jobs[0].teacher[0], "AH\0");
+        a_week.days[3].modules[5].jobs[0].subject = music;
+        strcpy(a_week.days[3].modules[5].jobs[0].class, "1.\0");
+
+    strcpy(a_week.days[4].modules[7].jobs[0].teacher[0], "AH\0");
+        a_week.days[4].modules[7].jobs[0].subject = math;
+        strcpy(a_week.days[4].modules[7].jobs[0].class, "3.\0");
+
+    print_week(&a_week, "AH\0");
+
     return 0;
 }
 
 //Output the fittest of weeks in the population pool.
-void print_fittest_week(const struct week* fittest_week, char* teacher) {
-    int d,m,j,t, status = -123 ;
-    char temp_string_subject[MAX_SUBJECT_CHARS];
-    FILE *out_ptr;
+void print_week(const struct week* fittest_week, char* teacher) {
 
-    out_ptr = fopen("Optimal_schedule.txt", "w");
-    assert(out_ptr != NULL);
+    int d,m;
+
+    FILE* out_ptr = fopen("SCHEDULE.txt", "w");
+    assert(out_ptr != 0);
+    printf("%d\n", out_ptr);
 
     fprintf(out_ptr, "The schedule for %s is as following:\n\n", teacher);
-    fprintf(out_ptr, "%s%40s%40s%40s%40s\n" "MAN", "TUE", "WED", "THU", "FRI");
+    fprintf(out_ptr, "%-25s%-25s%-25s%-25s%-25s\n", "MAN", "TUE", "WED", "THU", "FRI");
+
     //Loop checks every day, module and job for the teacher to print schedule for
-    for(m=0; m < MODULES_PR_DAY; m++){
-        for (j=0; j < JOBS_PR_MODULE; j++){
-            for(d=0; d < DAYS_PR_WEEK; d++){
-                for (t = 0; t < TEACHERS_PR_JOB; t++) {
-                    if (strcmp(teacher, fittest_week->days[d].modules[m].jobs[j].teacher[t])){
-                        strcpy(temp_string_subject, enum_to_string(fittest_week->days[d].modules[m].jobs[j].subject));
-                        status = fprintf(out_ptr, "%20s   %5s %15s",
-                               temp_string_subject, fittest_week->days[d].modules[m].jobs[j].class,
-                               " ");
-                        printf("%d\n", status);
-                        //fseek(out_ptr, 15, SEEK_CUR); Designet til at layout passer så der skrives under hver dag hvis ikke space løsning virker
-                    }
-                }
-            }
+    for(m=0; m < MODULES_PR_DAY; m++) {
+        for(d=0; d < DAYS_PR_WEEK; d++) {
+            print_module(&fittest_week->days[d].modules[m], teacher, out_ptr);
         }
-        fprintf(out_ptr, "________________________________________\n");
+
+        fprintf(out_ptr, "\n\n");
     }
 
     fprintf(out_ptr, "Week printed for given teacher\n");
-}
-char *enum_to_string(enum subjects subject){
-    char temp_string[MAX_SUBJECT_CHARS];
 
-    switch (subject) {
-        case art:
-            strcpy(temp_string, "billedkunst"); break;
-        case biology:
-            strcpy(temp_string, "biologi"); break;
-        case danish:
-            strcpy(temp_string, "dansk"); break;
-        case english:
-            strcpy(temp_string, "engelsk"); break;
-        case physics:
-            strcpy(temp_string, "fysik"); break;
-        case geography:
-            strcpy(temp_string, "geografi"); break;
-        case history:
-            strcpy(temp_string, "historie"); break;
-        case phys_ed:
-            strcpy(temp_string, "idræt"); break;
-        case classtime:
-            strcpy(temp_string, "klassens time"); break;
-        case religion:
-            strcpy(temp_string, "kristendomskundskab"); break;
-        case cooking:
-            strcpy(temp_string, "hjemkundskab"); break;
-        case math:
-            strcpy(temp_string, "matematik"); break;
-        case music:
-            strcpy(temp_string, "musik"); break;
-        case nature:
-            strcpy(temp_string, "natur-teknik"); break;
-        case socialstud:
-            strcpy(temp_string, "samfundsfag"); break;
-        case woodwork:
-            strcpy(temp_string, "sløjd"); break;
-        case german:
-            strcpy(temp_string, "tysk"); break;
-        case elective:
-            strcpy(temp_string, "valgfag"); break;
-        case prep:
-            strcpy(temp_string, "forberedelsestid"); break;
+    fclose(out_ptr);
+}
+
+//Function for printing one module for a teacher.
+//Prints empty module if no teacher matched.
+void print_module(const struct module* module, char* teacher, FILE* out_ptr) {
+    int j, t, found = 0;
+
+    for (j = 0; j < JOBS_PR_MODULE; j++) {
+        for (t = 0; t < TEACHERS_PR_JOB; t++) {
+            if (!strcmp(teacher, module->jobs[j].teacher[t])) {
+                found = 1;
+                print_subject(module->jobs[j].subject, out_ptr);
+                fprintf(out_ptr, "%-5s", module->jobs[j].class);
+            }
+        }
     }
 
-    return temp_string;
+    if (!found) {
+        fprintf(out_ptr, "%-25s", "-");
+    }
+}
+
+
+
+void print_subject(enum subjects subject, FILE* out_ptr) {
+    switch (subject) {
+        case art:
+            fprintf(out_ptr, "%-20s", "billedkunst"); break;
+        case biology:
+            fprintf(out_ptr, "%-20s", "biologi"); break;
+        case danish:
+            fprintf(out_ptr, "%-20s", "dansk"); break;
+        case english:
+            fprintf(out_ptr, "%-20s", "engelsk"); break;
+        case physics:
+            fprintf(out_ptr, "%-20s", "fysik"); break;
+        case geography:
+            fprintf(out_ptr, "%-20s", "geografi"); break;
+        case history:
+            fprintf(out_ptr, "%-20s", "historie"); break;
+        case phys_ed:
+            fprintf(out_ptr, "%-20s", "idrat"); break;
+        case classtime:
+            fprintf(out_ptr, "%-20s", "klassens time"); break;
+        case religion:
+            fprintf(out_ptr, "%-20s", "kristendomskundskab"); break;
+        case cooking:
+            fprintf(out_ptr, "%-20s", "hjemkundskab"); break;
+        case math:
+            fprintf(out_ptr, "%-20s", "matematik"); break;
+        case music:
+            fprintf(out_ptr, "%-20s", "musik"); break;
+        case nature:
+            fprintf(out_ptr, "%-20s", "natur-teknik"); break;
+        case socialstud:
+            fprintf(out_ptr, "%-20s", "samfundsfag"); break;
+        case woodwork:
+            fprintf(out_ptr, "%-20s", "slojd"); break;
+        case german:
+            fprintf(out_ptr, "%-20s", "tysk"); break;
+        case elective:
+            fprintf(out_ptr, "%-20s", "valgfag"); break;
+        case prep:
+            fprintf(out_ptr, "%-20s", "forberedelsestid"); break;
+        case crafting:
+            fprintf(out_ptr, "%-20s", "haand"); break;
+    }
+
+    return;
 }

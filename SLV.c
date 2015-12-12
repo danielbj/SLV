@@ -100,10 +100,10 @@ srand(1);
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
-    int i, j, random_week_1=-123, random_week_2=-123,
-        amount_killed=0, amount_living=0,
-        *individuals_killed;
-    fitted_population_t *population_fitnesses;
+    int j, random_week_1=-123, random_week_2=-123,
+        amount_killed=0, amount_living=0;
+    int *individuals_killed = 0;
+    fitted_population_t *population_fitnesses = 0;
 
     init_fitness_of_weeks(population_fitnesses, population_pool, n);
 
@@ -154,7 +154,7 @@ void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
 
 //Gives every individual a share of the roulette to be eliminated from.
 void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned int n){
-    int i,j, total_fitness_of_weeks = 0;
+    int i, total_fitness_of_weeks = 0;
 
     //Calculates the total fitness for this generation
     for (i = 0; i < n; i++) {
@@ -179,7 +179,7 @@ void individual_picker(fitted_population_t *population_fitnesses,
 
     for(i=0; i < amount_killed;){
         for(j=0; j < n; j++){
-            selector = gene_rand_num(biggest_roulette_part*1000000)/1000000; // FEJL, double og int problem
+            selector = (double)gene_rand_num(biggest_roulette_part*1000000)/1000000; // FEJL, double og int problem
             if(selector < population_fitnesses[j].roulette_part)
                 individuals_killed[i] = j;
                 i++;
@@ -215,7 +215,7 @@ void mutator(int j, int rand_1, fitted_population_t *population_fitnesses){
     temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[rand_1].week_pointer->days[DAY_TO_SWAP1];
 
     //kills individual j and makes new individual, with swapped days.
-    population_fitnesses[j].week_pointer[0] = temporary_week; //FIX week_pointer (evt fyld alle dage)
+    *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
 }
 
 //Function makes new individual from 2 random weeks. //FIX Lav bedre udvælgelse af gener.
@@ -245,5 +245,5 @@ void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *p
         }
     }
      //make new individual on element j, which is being discarded.
-    population_fitnesses[j].week_pointer[0] = temporary_week; //FIX week_pointer (evt fyld alle dage)
+    *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
 }

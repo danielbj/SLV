@@ -10,6 +10,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "time.h"
+#include <math.h>
 
 //Constants
 #define TEACHER_IDENTIFIER_LENGTH (3+1)
@@ -18,19 +19,24 @@
 #define JOBS_PR_MODULE (15)
 #define MODULES_PR_DAY (6)
 #define DAYS_PR_WEEK (5)
-#define HARD_SUBJECTS (4)
-#define MEDIUM_SUBJECTS (7)
-#define SOFT_SUBJECTS (8)
+#define HARD_SUBJECTS (3)
+#define MEDIUM_SUBJECTS (10)
+#define SOFT_SUBJECTS (17)
+#define EXTREME_REWARD (6)
+#define BIG_REWARD (3)
+#define MEDIUM_REWARD (2)
+#define SMALL_REWARD (1)
+#define MAX_Q_VALUE (100)
 
 //Enumerations
 enum subjects {
-    //Hard Subjects - 4 
+    //Hard Subjects - 3
     math,       //matematik
     danish,     //dansk
     english,    //engelsk
     german,     //tysk
 
-    //Medium subjects - 7
+    //Medium subjects - 10
     physics,    //fysik
     nature,     //natur-teknik
     biology,    //biologi
@@ -39,17 +45,17 @@ enum subjects {
     geography,  //geografi
     socialstud, //samfundsfag
 
-    //Soft subjects - 8
+    //Soft subjects - 17
     classtime,  //klassens time
     art,        //billedkunst
-    crafting,   //håndarbejde
+    //crafting,   //håndarbejde DEBUG Slettes evt.
     music,      //musik
     cooking,    //hjemkundskab
     woodwork,   //sløjd
     phys_ed,    //idræt
     elective,    //valgfag
 
-    //Special subjects - 1
+    //Special subjects - 18
     prep        //forberedelsestid
 };
 
@@ -75,188 +81,214 @@ struct week {
 };
 
 //Function prototypes
-struct week* initialize_weeks(int n);
-void next_generation(struct week* population_pool, unsigned int n);
-int fitness_of_week(const struct week* individual);
-void print_fittest_week(const struct week* population_pool);
-int fitness_function_mulitiple_lessons(const struct week* individual, int i, int j, int k);
-int fitness_function_module_time(const struct week* individual, int i, int j, int k);
-int fitness_function_no_free_space(const struct week* individual, i, j, k)
+int fitness_of_week(struct week* individual);
+int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, int j);
+int fitness_function_module_time(struct week* individual, int d, int m, int j);
+int fitness_function_no_free_space(struct week* individual, int d, int m, int j);
+int fitness_function_day_length(struct week* individual);
+int get_day_length(struct day *day);
 
 
 //main function
 int main(int argc, char *argv[]) {
-    
-    
-    
-    
+
+
+
+
     return 0;
 }
 
-
-
-//Input + generation + sanitation
-//Initialize n weeks with jobs from jobs.txt
-struct week* initialize_weeks(int n) {
-    return;
-}
-
-
-
-//Function that generates a new population.
-//This function overwrites the initial population (thus returning void).
-void next_generation(struct week* population_pool, unsigned int n) {
-    return;
-}
-
-/* Krav
-    1: Skriftlige fag tidligt på dagen
-    2: Et sæt af samme fag (2)
-    3: Tjek om dagene er cika lige lange
-    4: Tjek om der ikke hul timer
-    5: 
-    */
-
-int fitness_of_week(const struct week* individual) {    
+//Tests the total fitness of a week.
+//Returns this fitness
+int fitness_of_week(struct week* individual) {
     int fitness_module_time = 0;                     //Placering af fag tidsmæssigt.
     int fitness_multiple_lessons = 0;                //To fag i streg.
     int fitness_no_free_space = 0;                   //Ingen hul timer.
-    int i;
-    int j;
-    int k;
+    int fitness_day_length = 0;
+    int d, m, j, total_fitness = 0;
 
-    for (i = 0; i < DAYS_PR_WEEK; i++) {
-        for (j = 0; i < MODULES_PR_DAY; j++) {
-            for (k = 0; k < JOBS_PR_MODULE; k++) {
-                
-                fitness_module_time = fitness_function_module_time(individual, i, j, k);
+    fitness_day_length = fitness_function_day_length(individual);
 
-                fitness_multiple_lessons = fitness_function_mulitiple_lessons(individual, i, j, k);
+    for (d = 0; d < DAYS_PR_WEEK; d++) {
+        for (m = 0; m < MODULES_PR_DAY; m++) {
+            for (j = 0; j < JOBS_PR_MODULE; j++) {
 
-                fitness_no_free_space = fitness_function_no_free_space(individual, i, j, k);
+                fitness_module_time += fitness_function_module_time(individual, d, m, j);
+
+                fitness_multiple_lessons += fitness_function_mulitiple_lessons(individual, d, m, j);
+
+                fitness_no_free_space += fitness_function_no_free_space(individual, d, m, j);
             }
         }
     }
 
-    return (fitness_module_time + fitness_multiple_lessons + fitness_preparation_time);
+    total_fitness = (fitness_day_length + fitness_module_time + fitness_multiple_lessons +
+                    fitness_no_free_space);
+
+    return total_fitness;
 }
 
+//Funcion for testing a modules placement on a day,
+//while considering the difficulty of the subject taught.
+int fitness_function_module_time(struct week* individual, int d, int m, int j) {
+    int fitness_modules_time = 0;
+    enum subjects tested_subject = 0;
 
-int fitness_function_module_time(const struct week* individual, int i, int j, int k) {
-    int fitness_modules_time;
+    tested_subject = individual->days[d].modules[m].jobs[j].subject;
 
-    if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 2) {
-        fitness_modules_time = 3;
-    }
-    else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 4) {
-        fitness_modules_time = 2;
-    }
-    else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 8) {
-        fitness_modules_time = 1;
-    }
-
-    
-    if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 2) {
-        fitness_modules_time = 2;
-    }
-    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 4) {
-        fitness_modules_time = 3;
-    }
-    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 8) {
-        fitness_modules_time = 1;
+    //Tests for placement of preperation time in the day
+    if (tested_subject == prep) {
+        if(m < 2) {
+            fitness_modules_time += SMALL_REWARD;
+        }
+        else if (m < 4) {
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if (m < 8) {
+            fitness_modules_time += BIG_REWARD;
+        }
+        else {
+            fitness_modules_time += EXTREME_REWARD;
+        }
     }
 
+    //Tests for hard subjects and placement on the day
+    if (tested_subject <= HARD_SUBJECTS){
+        if(m < 2) {
+            fitness_modules_time += BIG_REWARD;
+        }
+        else if (m < 4) {
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if (m < 8) {
+            fitness_modules_time += SMALL_REWARD;
+        }
+    }
 
-    if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 2) {
-        fitness_modules_time = 1;
+    //Tests for medium difficulty subjects and placement on the day
+    if (tested_subject > HARD_SUBJECTS && tested_subject <= MEDIUM_SUBJECTS) {
+        if(m < 2){
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if(m < 4){
+            fitness_modules_time += BIG_REWARD;
+        }
+        else if(m < 8){
+            fitness_modules_time += SMALL_REWARD;
+        }
     }
-    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 4) {
-        fitness_modules_time = 2;
+
+    //Tests for a soft subject and placement on the day
+    if (tested_subject > MEDIUM_SUBJECTS && tested_subject <= SOFT_SUBJECTS){
+        if(m < 2) {
+            fitness_modules_time += SMALL_REWARD;
+        }
+        else if (m < 4) {
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if (m < 8) {
+            fitness_modules_time += BIG_REWARD;
+        }
     }
-    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 8) {
-        fitness_modules_time = 3;
-    }
-return fitness_modules_time;
+
+    return fitness_modules_time;
 }
 
-int fitness_function_mulitiple_lessons(const struct week* individual, int i, int j, int k){
-    int fitness_multiple_lessons;
-    
-    if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject && 
-        individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[j+1].jobs[k].class && j % 2 == 0) {
-    fitness_multiple_lessons = 6;
-    }
-    else if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject && 
-             individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[j+1].jobs[k].class && j % 2 == 1) {
-    fitness_multiple_lessons = 4;
+//Funtion for testing the event of 2 lessons in a row, and reward such case.
+int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, int j){
+    int i, fitness_multiple_lessons = 0;
+    struct module* tested_module = 0;
+    struct module* next_module = 0;
+
+    if(m >= MODULES_PR_DAY){
+        return 0;
     }
 
+    tested_module = &individual->days[d].modules[m];
+    next_module = &individual->days[d].modules[m+1];
+
+    //Loop tests if 2 subjects for the same class appears consecutively in 2 modules, either with
+    //a break between the modules or without (hence m%2).
+    for(i = 0; i < JOBS_PR_MODULE; i++){
+        if (tested_module->jobs[j].subject == next_module->jobs[i].subject &&
+            tested_module->jobs[j].class == next_module->jobs[i].class &&
+            m % 2 == 0) {
+
+            fitness_multiple_lessons += EXTREME_REWARD;
+        }
+        else if (tested_module->jobs[j].subject == next_module->jobs[i].subject &&
+                tested_module->jobs[j].class == next_module->jobs[i].class &&
+                m % 2 == 1) {
+
+            fitness_multiple_lessons += BIG_REWARD;
+        }
+    }
 
     return fitness_multiple_lessons;
 }
 
-int fitness_function_no_free_space(const struct week* individual, i, j, k) {
+//Functions tests for space between modules on a day.
+int fitness_function_no_free_space(struct week* individual, int d, int m, int j) {
     int fitness_no_free_space = 0;
-    int h = 1;
 
-    if (individual->days[i].modules[j].jobs[k].free_time == 1){
-        while (j + h < MODULES_PR_DAY) {
-            if (individual->days[i].modules[j+h].jobs[k].free_time == 1) {
-            h++;
-            }
-            
-            else {
-            fitness_no_free_space -= 9001; 
-            }
+    //Tests for a the presence of a teacher.
+    if (strcmp(individual->days[d].modules[m].jobs[j].teacher[0], "\0") == 0){
+        if (m >= 8){
+            fitness_no_free_space += BIG_REWARD;
+        }
+        else{
+            fitness_no_free_space += 0;
         }
     }
+
     return fitness_no_free_space;
 }
 
-//Output the fittest of weeks in the population pool.
-void print_fittest_week(const struct week* population_pool) {
-    return;
+//Function tests deviation from optimal day length in a week
+int fitness_function_day_length(struct week* individual) {
+    int d, day_length[DAYS_PR_WEEK];
+    int sum_of_lengths = 0, week_points = 0;
+    double avg_day_length = 0, q_value = 0; //q_value worst case is 44, and this value expresses
+                                            //the deviation from the optimal day length this week
+
+    for(d = 0; d < DAYS_PR_WEEK; d++){
+        day_length[d] = get_day_length(&individual->days[d]);
+        sum_of_lengths += day_length[d];
+    }
+
+    avg_day_length = sum_of_lengths / DAYS_PR_WEEK;
+
+    for(d = 0; d < DAYS_PR_WEEK; d++){
+        q_value += (pow((day_length[d] - avg_day_length),2) / avg_day_length);
+    }
+
+    if(q_value >= 33){
+        week_points += 0;
+    }
+    else if(q_value >= 22 && q_value < 33){
+        week_points += SMALL_REWARD;
+    }
+    else if(q_value >= 11 && q_value < 22){
+        week_points += MEDIUM_REWARD;
+    }
+    else if(q_value < 11){
+        week_points += BIG_REWARD;
+    }
+
+    return week_points;
 }
 
-int fitness_function_day_length(const struct week* individual, i, k) {
-    int day1 = 0; day2 = 0; day3 = 0; day4 = 0; day5 = 0;
-    int i, k;
-    int j = 0;
+//counts amount of non-free modules in a day.
+int get_day_length(struct day *day){
+    int m,j;
+    int count;
 
-    if(i == 0){
-        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
-               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
-            day1++;
-            j++;
+    for(m = 0; m < MODULES_PR_DAY; m++){
+        for(j = 0; j < JOBS_PR_MODULE; j++){
+            if (strcmp(day->modules[m].jobs[j].teacher[0], "\0") != 0){
+                count++; break;
+            }
         }
     }
-    else if (i == 1) {
-        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
-               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
-            day2++;
-            j++;
-        }
-    }
-    else if (i == 2) {
-        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
-               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
-            day3++;
-            j++;        
-        }
-    }
-    else if (i == 3) {
-        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
-                           individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
-            day4++;
-            j++;       
-        }
-    }
-    else if (i == 4) {
-        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
-               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
-            day5++;
-            j++;        
-        }
-    }
-    return 
+    return count;
 }

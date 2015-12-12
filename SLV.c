@@ -455,7 +455,7 @@ void print_week(const struct week* fittest_week, char* teacher) {
         fprintf(out_ptr, "\n\n");
     }
 
-    fprintf(out_ptr, "Week printed for given teacher\n");
+    fprintf(out_ptr, "\nWeek printed for given teacher\n");
 
     fclose(out_ptr);
 }
@@ -499,7 +499,7 @@ void print_subject(enum subjects subject, FILE* out_ptr) {
         case history:
             fprintf(out_ptr, "%-20s", "historie"); break;
         case phys_ed:
-            fprintf(out_ptr, "%-20s", "idrat"); break;
+            fprintf(out_ptr, "%-20s", "idraet"); break;
         case classtime:
             fprintf(out_ptr, "%-20s", "klassens time"); break;
         case religion:
@@ -515,7 +515,7 @@ void print_subject(enum subjects subject, FILE* out_ptr) {
         case socialstud:
             fprintf(out_ptr, "%-20s", "samfundsfag"); break;
         case woodwork:
-            fprintf(out_ptr, "%-20s", "slojd"); break;
+            fprintf(out_ptr, "%-20s", "sloejd"); break;
         case german:
             fprintf(out_ptr, "%-20s", "tysk"); break;
         case elective:
@@ -523,7 +523,7 @@ void print_subject(enum subjects subject, FILE* out_ptr) {
         case prep:
             fprintf(out_ptr, "%-20s", "forberedelsestid"); break;
         case crafting:
-            fprintf(out_ptr, "%-20s", "haand"); break;
+            fprintf(out_ptr, "%-20s", "haandarbejde"); break;
     }
 
     return;

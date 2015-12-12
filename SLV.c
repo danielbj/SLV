@@ -24,7 +24,7 @@
 
 //Enumerations
 enum subjects {
-    //Hard Subjects - 4
+    //Hard Subjects - 4 
     math,       //matematik
     danish,     //dansk
     english,    //engelsk
@@ -81,16 +81,15 @@ int fitness_of_week(const struct week* individual);
 void print_fittest_week(const struct week* population_pool);
 int fitness_function_mulitiple_lessons(const struct week* individual, int i, int j, int k);
 int fitness_function_module_time(const struct week* individual, int i, int j, int k);
-int fitness_function_preparation_time(const struct week* individual);
-
+int fitness_function_no_free_space(const struct week* individual, i, j, k)
 
 
 //main function
 int main(int argc, char *argv[]) {
-
-
-
-
+    
+    
+    
+    
     return 0;
 }
 
@@ -111,23 +110,17 @@ void next_generation(struct week* population_pool, unsigned int n) {
 }
 
 /* Krav
-    1: Forberedelse skal ligge tæt på den kommende leksion
-    2: Skriftlige fag tidligt på dagen
-    3: Et sæt af samme fag (2)
+    1: Skriftlige fag tidligt på dagen
+    2: Et sæt af samme fag (2)
+    3: Tjek om dagene er cika lige lange
+    4: Tjek om der ikke hul timer
+    5: 
     */
 
-    /*Ombytning af fag i enum subjects for at gøre det mere
-    effektivt at tjekke fagene*/
-
-    /*Hvordan man tilgår det rigtige fag i det rigtige job
-    i det rigtige modul*/
-    /**/
-
-
-int fitness_of_week(const struct week* individual) {
-    int fitness_module_time = 0;                     //Placering af fag tidsmæssigt
-    int fitness_multiple_lessons = 0;               //To fag i streg
-    int fitness_preparation_time = 0;                //Forberedelse skal ligge ved den kommende leksion  goodaw
+int fitness_of_week(const struct week* individual) {    
+    int fitness_module_time = 0;                     //Placering af fag tidsmæssigt.
+    int fitness_multiple_lessons = 0;                //To fag i streg.
+    int fitness_no_free_space = 0;                   //Ingen hul timer.
     int i;
     int j;
     int k;
@@ -135,40 +128,19 @@ int fitness_of_week(const struct week* individual) {
     for (i = 0; i < DAYS_PR_WEEK; i++) {
         for (j = 0; i < MODULES_PR_DAY; j++) {
             for (k = 0; k < JOBS_PR_MODULE; k++) {
-
+                
                 fitness_module_time = fitness_function_module_time(individual, i, j, k);
 
                 fitness_multiple_lessons = fitness_function_mulitiple_lessons(individual, i, j, k);
+
+                fitness_no_free_space = fitness_function_no_free_space(individual, i, j, k);
             }
         }
     }
-    //fitness_PreparationTime = fitness_function_preparation_time(individual);
 
     return (fitness_module_time + fitness_multiple_lessons + fitness_preparation_time);
 }
-/*
-int fitness_function_preparation_time(const struct week* individual) {
-    int fitness_preparation_time;
-    int i, j, k;
 
-        for (i = DAYS_PR_WEEK; i < 0; i--) {
-            for (j = MODULES_PR_DAY; j < 0; j--) {
-                for (k = JOBS_PR_MODULE; k < 0; k--) {
-                    if(individual->day[i]modules[j].jobs[k].subject == prep && individual->days[i].modules[j].jobs[k].prep_confirmed == 0 ){
-                        individual->days[i].modules[j].jobs[k].prep_confirmed = 1; //selve preptimen
-                        individual->days[i].modules[j].jobs[k].prep_confirmed = 1; //den første lektion
-                        individual->days[i].modules[j].jobs[k].prep_confirmed = 1; //den anden lektion
-                        i = DAYS_PR_WEEK;
-                        j = MODULES_PR_DAY;
-                        k = JOBS_PR_MODULE;
-                    }
-                }
-            }
-        }
-    }
-    return fitness_preparation_time;
-}
-*/
 
 int fitness_function_module_time(const struct week* individual, int i, int j, int k) {
     int fitness_modules_time;
@@ -179,18 +151,18 @@ int fitness_function_module_time(const struct week* individual, int i, int j, in
     else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 4) {
         fitness_modules_time = 2;
     }
-    else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 6) {
+    else if (individual->days[i].modules[j].jobs[k].subject < 4 && j < 8) {
         fitness_modules_time = 1;
     }
 
-
+    
     if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 2) {
         fitness_modules_time = 2;
     }
     else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 4) {
         fitness_modules_time = 3;
     }
-    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 6) {
+    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 11 && j < 8) {
         fitness_modules_time = 1;
     }
 
@@ -201,7 +173,7 @@ int fitness_function_module_time(const struct week* individual, int i, int j, in
     else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 4) {
         fitness_modules_time = 2;
     }
-    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 6) {
+    else if (individual->days[i].modules[j].jobs[k].subject >= 4 && individual->days[i].modules[j].jobs[k].subject < 19 && j < 8) {
         fitness_modules_time = 3;
     }
 return fitness_modules_time;
@@ -209,12 +181,12 @@ return fitness_modules_time;
 
 int fitness_function_mulitiple_lessons(const struct week* individual, int i, int j, int k){
     int fitness_multiple_lessons;
-
-    if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject &&
+    
+    if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject && 
         individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[j+1].jobs[k].class && j % 2 == 0) {
     fitness_multiple_lessons = 6;
     }
-    else if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject &&
+    else if (individual->days[i].modules[j].jobs[k].subject == individual->days[i].modules[j+1].jobs[k].subject && 
              individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[j+1].jobs[k].class && j % 2 == 1) {
     fitness_multiple_lessons = 4;
     }
@@ -223,7 +195,68 @@ int fitness_function_mulitiple_lessons(const struct week* individual, int i, int
     return fitness_multiple_lessons;
 }
 
+int fitness_function_no_free_space(const struct week* individual, i, j, k) {
+    int fitness_no_free_space = 0;
+    int h = 1;
+
+    if (individual->days[i].modules[j].jobs[k].free_time == 1){
+        while (j + h < MODULES_PR_DAY) {
+            if (individual->days[i].modules[j+h].jobs[k].free_time == 1) {
+            h++;
+            }
+            
+            else {
+            fitness_no_free_space -= 9001; 
+            }
+        }
+    }
+    return fitness_no_free_space;
+}
+
 //Output the fittest of weeks in the population pool.
 void print_fittest_week(const struct week* population_pool) {
     return;
+}
+
+int fitness_function_day_length(const struct week* individual, i, k) {
+    int day1 = 0; day2 = 0; day3 = 0; day4 = 0; day5 = 0;
+    int i, k;
+    int j = 0;
+
+    if(i == 0){
+        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
+               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
+            day1++;
+            j++;
+        }
+    }
+    else if (i == 1) {
+        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
+               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
+            day2++;
+            j++;
+        }
+    }
+    else if (i == 2) {
+        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
+               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
+            day3++;
+            j++;        
+        }
+    }
+    else if (i == 3) {
+        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
+                           individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
+            day4++;
+            j++;       
+        }
+    }
+    else if (i == 4) {
+        while (individual->days[i].modules[j].jobs[k].free_time == 0 && 
+               individual->days[i].modules[j].jobs[k].class == individual->days[i].modules[0].jobs[k].class){
+            day5++;
+            j++;        
+        }
+    }
+    return 
 }

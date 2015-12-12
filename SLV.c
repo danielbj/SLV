@@ -151,7 +151,7 @@ struct job* read_jobs(void) {
     printf("JOBS INSERTED = %d\n", job);//DEBUG
 
     //Insert empty job
-    job_pool[job].teacher[0][0] = 0; //Sæt evt. til string \0 //DEBUG
+    strcpy(job_pool[job].teacher[0], "\0");
 
     fclose(file);
     return job_pool;
@@ -169,8 +169,7 @@ int read_job(struct job* job, FILE* file) {
 
     //Nullify teachers
     for (i = 0; i < TEACHERS_PR_JOB; i++) {
-        temp_job.teacher[i][0] = 0;
-        temp_job.teacher[i][TEACHER_IDENTIFIER_LENGTH - 1] = 0; //DEBUG Skriv evt. at alle teachers nulstilles vha strcpy \0
+        strcpy(temp_job.teacher[i],"\0");
     }
 
     //Read one line from the file
@@ -332,8 +331,7 @@ int generate_week(struct week* week, struct job* job_pool) {
         }
     }
     //Debug
-    printf("JOB POOL INDEX: %d: ", i);//DEBUG
-    printf("Inserted!\n");
+    printf("JOB POOL INDEX: %d: INSERTED\n", i);
 
     return 1;
 }
@@ -369,7 +367,6 @@ int insert_job_in_module(struct job* job, struct module* module) {
 
     //Check for teacher and class conflicts.
     if (is_class_conflict(module, job) || is_teacher_conflict(module, job)) {
-        //printf("CONFLICT!\n");//DEBUG
         return 0;
     }
 
@@ -387,7 +384,7 @@ int insert_job_in_module(struct job* job, struct module* module) {
 //Function for checking if a job is empty.
 //Returns !NULL if empty.
 int is_empty_job(struct job* job) {
-    return (job->teacher[0][0] == 0 || strcmp(job->teacher[0],"\0") == 0); // DEBUG Tester ikke rette lærere hvis det er lærer 2 som skal testes.
+    return (strcmp(job->teacher[0],"\0") == 0);
 }
 
 //Function for checking for teacher conflicts in a module.
@@ -400,13 +397,9 @@ int is_teacher_conflict(struct module* module, struct job* job) {
     for (d_job_teacher = 0; d_job_teacher < TEACHERS_PR_JOB; d_job_teacher++) {
         for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
             for (d_teacher = 0; d_teacher < TEACHERS_PR_JOB; d_teacher++) {
-
-                //printf("%s vs. %s\n", module->jobs[d_job].teacher[d_teacher], job->teacher[d_job_teacher]);/DEBUG
-                //printf("string spot testing: %s\t", module->jobs[d_job].teacher[d_teacher]);
-                if (/*module->jobs[d_job].teacher[d_teacher] != 0 || */strcmp(module->jobs[d_job].teacher[d_teacher], "\0")!=0) { //Tester d_job=0 & d_teacher = 1 til != 0 hvilket ikke passer. DEBUG
+                if (strcmp(module->jobs[d_job].teacher[d_teacher], "\0") != 0) {
                     if (strcmp(module->jobs[d_job].teacher[d_teacher],
-                                job->teacher[d_job_teacher]) == 0) {  //DEBUG ændret strcmp til kun at fange ==0
-                        //printf("\tTEACHER ");//DEBUG
+                                job->teacher[d_job_teacher]) == 0) {
                         return 1;
                     }
                 }
@@ -425,7 +418,6 @@ int is_class_conflict(struct module* module, struct job* job) {
     for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
         if (module->jobs[d_job].subject != prep) {
             if(!strcmp(module->jobs[d_job].class, job->class)) {
-                //printf("\tCLASS ");//DEBUG
                 return 1;
             }
         }

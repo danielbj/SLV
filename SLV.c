@@ -25,6 +25,7 @@
 #define EXPECTED_MIN_SCANS (4)
 #define MAX_LINE_LENGTH (50)
 #define JOB_FILE_NAME "jobs.txt"
+#define SCHEDULE_FILE_NAME "SKEMA.txt"
 
 #define ELIMINATION_PART (0.5)
 #define MUTATION_PART 0.10
@@ -38,7 +39,15 @@
 #define BIG_REWARD (3)
 #define MEDIUM_REWARD (2)
 #define SMALL_REWARD (1)
-#define MAX_Q_VALUE (100)
+
+#define FITNESS_MODULE_TIME_BASE (1400)
+#define FITNESS_MODULE_TIME_FACTOR (1.3)
+#define FITNESS_MULTIPLE_LESSONS_BASE (0)
+#define FITNESS_MULTIPLE_LESSONS__FACTOR (1)
+#define FITNESS_NO_FREE_SPACE_BASE (350)
+#define FITNESS_NO_FREE_SPACE_FACTOR (1)
+
+
 
 //Enumerations
 enum subjects {
@@ -127,8 +136,6 @@ int fitness_of_week(struct week* individual);
 int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, int j);
 int fitness_function_module_time(struct week* individual, int d, int m, int j);
 int fitness_function_no_free_space(struct week* individual, int d, int m, int j);
-int fitness_function_day_length(struct week* individual);
-int get_day_length(struct day *day);
 
 void print_week(const struct week* fittest_week, char* teacher);
 void print_module(const struct module* module, char* teacher, FILE* out_ptr);
@@ -151,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     //Test fitness!
     for (i = 0; i < 100; i++) {
-        printf("\nFitness: %d\n", fitness_of_week(&week_pool[i]));
+        fitness_of_week(&week_pool[i]);
     }
     printf("\nDONE!\n");
 
@@ -643,10 +650,7 @@ int fitness_of_week(struct week* individual) {
     int fitness_module_time = 0;                     //Placering af fag tidsmæssigt.
     int fitness_multiple_lessons = 0;                //To fag i streg.
     int fitness_no_free_space = 0;                   //Ingen hul timer.
-    int fitness_day_length = 0;
     int d, m, j, total_fitness = 0;
-
-    fitness_day_length = fitness_function_day_length(individual);
 
     for (d = 0; d < DAYS_PR_WEEK; d++) {
         for (m = 0; m < MODULES_PR_DAY; m++) {
@@ -661,16 +665,18 @@ int fitness_of_week(struct week* individual) {
         }
     }
 
+    //Align fitness values according to base and factor
+    fitness_module_time = (fitness_module_time - FITNESS_MODULE_TIME_BASE) * FITNESS_MODULE_TIME_FACTOR;
+    fitness_multiple_lessons = (fitness_multiple_lessons - FITNESS_MULTIPLE_LESSONS_BASE) * FITNESS_MULTIPLE_LESSONS__FACTOR;
+    fitness_no_free_space = (fitness_no_free_space - FITNESS_NO_FREE_SPACE_BASE) * FITNESS_NO_FREE_SPACE_FACTOR;
 
-    total_fitness = (fitness_day_length + fitness_module_time + fitness_multiple_lessons +
-                    fitness_no_free_space);
+    total_fitness = (fitness_module_time + fitness_multiple_lessons + fitness_no_free_space);
 
     //DEBUG
-    printf("fitness_module_time: %d\n", fitness_module_time);
-    printf("fitness_multiple_lessons: %d\n", fitness_multiple_lessons);
-    printf("fitness_no_free_space: %d\n", fitness_no_free_space);
-    printf("fitness_day_length: %d\n", fitness_day_length);
-
+    printf("%-4d\t", fitness_module_time);
+    printf("%-4d\t", fitness_multiple_lessons);
+    printf("%-4d\t", fitness_no_free_space);
+    printf("total fitness: %-5d\n", total_fitness);
 
 
 
@@ -798,76 +804,27 @@ int fitness_function_no_free_space(struct week* individual, int d, int m, int j)
     return fitness_no_free_space;
 }
 
-//Function tests deviation from optimal day length in a week
-int fitness_function_day_length(struct week* individual) {
-    int d, day_length[DAYS_PR_WEEK];
-    int sum_of_lengths = 0, fitness_day_length = 0;
-    double avg_day_length = 0, deviation = 0;
 
-    //Calculate sum of day lengths and get each day's lengths.
-    for(d = 0; d < DAYS_PR_WEEK; d++){
-        day_length[d] = get_day_length(&individual->days[d]);
-        sum_of_lengths += day_length[d];
-    }
-
-    //Calculate average
-    avg_day_length = sum_of_lengths / DAYS_PR_WEEK;
-
-    //Calculate total deviation from average
-    for(d = 0; d < DAYS_PR_WEEK; d++){
-         deviation += pow(day_length[d] - avg_day_length, 2) / avg_day_length;
-    }
-
-    //Calculate percentage
-    //deviation /= pow(sum_of_lengths, 1);
-
-    //Assign fitness points, based on the deviation.
-    //The bigger the deviation, the smaller the reward.
-    //A deviation of 0 results in an extreme reward
-    fitness_day_length = (1-deviation) * EXTREME_REWARD;
-
-    printf("DEV: %lf\n", deviation);//DEBUG
-
-    return fitness_day_length;
-}
-
-//counts amount of non-free modules in a day.
-int get_day_length(struct day *day){
-    int m,j;
-    int count;
-
-    for(m = 0; m < MODULES_PR_DAY; m++){
-        for(j = 0; j < JOBS_PR_MODULE; j++){
-            if (day->modules[m].jobs[j].subject != prep) {
-                if (strcmp(day->modules[m].jobs[j].teacher[0], "\0") != 0){
-                    count++;// break;
-                }
-            }
-        }
-    }
-    return count;
-}
 
 //Output the fittest of weeks in the population pool.
 void print_week(const struct week* fittest_week, char* teacher) {
 
     int d,m;
 
-    FILE* out_ptr = fopen("SCHEDULE.txt", "w");
+    FILE* out_ptr = fopen(SCHEDULE_FILE_NAME, "w");
     assert(out_ptr != 0);
 
-    fprintf(out_ptr, "The schedule for %s is as following:\n\n", teacher);
-    fprintf(out_ptr, "%-25s%-25s%-25s%-25s%-25s\n", "MAN", "TUE", "WED", "THU", "FRI");
+    fprintf(out_ptr, "Skemaet for %s:\n\n", teacher);
+    fprintf(out_ptr, "%-13s%-25s%-25s%-25s%-25s%-25s\n", "", "MAN", "TIR", "ONS", "TOR", "FRE\n");
 
     //Loop checks every day, module and job for the teacher to print schedule for
     for(m=0; m < MODULES_PR_DAY; m++) {
+        fprintf(out_ptr, "LEKTION %-2d   ", m+1);
         for(d=0; d < DAYS_PR_WEEK; d++) {
             print_module(&fittest_week->days[d].modules[m], teacher, out_ptr);
         }
         fprintf(out_ptr, "\n\n");
     }
-
-    fprintf(out_ptr, "\nWeek printed for given teacher\n");
 
     fclose(out_ptr);
 }

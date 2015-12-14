@@ -6,17 +6,18 @@
 //
 
 //Includes
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "time.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <assert.h>
 
 //Constants
 #define TEACHER_IDENTIFIER_LENGTH (3+1)
 #define CLASS_IDENTIFIER_LENGTH (4+1)
 #define TEACHERS_PR_JOB (3)
-#define JOBS_PR_MODULE (10)
-#define MODULES_PR_DAY (11)
+#define JOBS_PR_MODULE (20)
+#define MODULES_PR_DAY (30)
 #define DAYS_PR_WEEK (5)
 #define MAX_SUBJECT_CHARS (20)
 #define EXPECTED_MIN_SCANS (4)
@@ -32,7 +33,7 @@ enum subjects {
     physics,    //fysik
     geography,  //geografi
     history,    //historie
-    //crafting,   //håndarbejde (ER IKKE MED I DATAEN MERE)
+    crafting,   //håndarbejde (ER IKKE MED I DATAEN MERE)
     phys_ed,    //idræt
     classtime,  //klassens time
     religion,   //kristendomskundskab
@@ -70,6 +71,11 @@ struct week {
 //Function prototypes
 struct week* initialize_weeks(int n);
 
+struct job* read_jobs(void);
+int read_job(struct job* job, FILE* file);
+struct job* job_counter(FILE* file);
+enum subjects translate_subject(char temp_subject[]);
+
 struct week* insert_jobs(struct job* job_pool, int number_of_weeks);
 int generate_week(struct week* week, struct job* job_pool);
 int insert_job_in_week(struct job* job, struct week* week, int day, int module);
@@ -78,22 +84,24 @@ int is_empty_job(struct job* job);
 int is_teacher_conflict(struct module* module, struct job* job);
 int is_class_conflict(struct module* module, struct job* job);
 
-struct job* read_jobs(void);
-int read_job(struct job* job, FILE* file);
-struct job* job_counter(FILE* file);
-enum subjects translate_subject(char temp_subject[]);
+void print_week(const struct week* fittest_week, char* teacher);
+void print_module(const struct module* module, char* teacher, FILE* out_ptr);
+void print_subject(enum subjects subject, FILE* out_ptr);
 
-//main function
-int main(int argc, char *argv[]) {
 
-    struct week* week_pool = initialize_weeks(100);
-    printf("%u\n", week_pool);
 
-    //printf("%s\n", week_pool[0].days[0].modules[0].jobs[0].class);
+//Main function
+int main(int argc, char *argv[]){
+
+    struct week* week_pool = initialize_weeks(1);
+    assert(week_pool != 0);
+
+    print_week(&week_pool[0], "HM");
+
+    printf("\nDONE!\n");
 
     return 0;
 }
-
 
 
 //Input + generation + sanitation
@@ -101,16 +109,16 @@ int main(int argc, char *argv[]) {
 //Returns NULL if error.
 struct week* initialize_weeks(int number_of_weeks) {
     struct job* job_pool = 0;
+    struct week* week_pool = 0;
 
     job_pool = read_jobs();
-    if(!job_pool) {
-        return 0;
-    }
+    assert(job_pool != 0);
 
-    return insert_jobs(job_pool, number_of_weeks);
+    week_pool = insert_jobs(job_pool, number_of_weeks);
+    assert(week_pool != 0);
+
+    return week_pool;
 }
-
-
 
 //Function for reading all jobs from a file
 //Generated job pool ends with empty job.
@@ -137,6 +145,7 @@ struct job* read_jobs(void) {
             done = 1;
         } else {
             job += n_insertions;
+            printf("INSERTION POINT = %d\n", job);//DEBUG
         }
     }
 
@@ -148,7 +157,7 @@ struct job* read_jobs(void) {
 }
 
 //Function for reading one job from a file.
-//Returns NULL if EOF, else returns number of inserted jobs in job pool.
+//Asserts on error. Else, returns number of read jobs.
 int read_job(struct job* job, FILE* file) {
     int i;//loop counter
     int status = 0;
@@ -164,7 +173,7 @@ int read_job(struct job* job, FILE* file) {
     }
 
     //Read one line from the file
-    if(!fgets(buffer, MAX_LINE_LENGTH, file)) {
+    if (fgets(buffer, MAX_LINE_LENGTH, file) == 0) {
         return 0;
     }
 
@@ -177,15 +186,11 @@ int read_job(struct job* job, FILE* file) {
         temp_job.teacher[2]
     );
 
-    //Return if EOF
-    if (status < EXPECTED_MIN_SCANS) {
-        return 0;
-    }
+    //Check if EOF
+    assert(status >= EXPECTED_MIN_SCANS);
 
     //Translate the subject to enum
     temp_job.subject = translate_subject(temp_subject);
-
-    n_insertions /= 2;//DEBUG to ease the week generation.
 
     for (i = 0; i < n_insertions; i++) {
         job[i] = temp_job;
@@ -206,9 +211,10 @@ struct job* job_counter(FILE* file) {
         n_jobs += new;
     }
 
-    n_jobs /= 2;//DEBUG to ease the week generation.
+    printf("%d", n_jobs);
 
     struct job* job_pool = malloc(sizeof(struct job) * (n_jobs+1));
+    assert(job_pool != 0);
 
     rewind(file);
 
@@ -273,11 +279,13 @@ enum subjects translate_subject(char temp_subject[]) {
     else if(strncmp(temp_subject, "Valghold", 4) == 0) {
         trans_subject = elective;
     }
+    else if(strncmp(temp_subject, "Forberedelsestid", 4) == 0) {
+        trans_subject = elective;
+    }
+
 
     return trans_subject;
 }
-
-
 
 //Function for generating a pool of weeks, by randomly inserting jobs, respecting teacher conflicts.
 //Returns NULL on error.
@@ -286,17 +294,14 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
 
     //Allocate memory for pool of generated weeks
     struct week* week_pool = calloc(number_of_weeks, sizeof(struct week));
-    if (!week_pool) {
-        return 0;
-    }
-
+    assert(week_pool != 0);
 
     //seed random number generator
     srand(time(0));//Move to main?!
 
     //Generate n weeks
     for (i = 0; i < number_of_weeks; i++) {
-        if (!generate_week(&week_pool[i], job_pool)) {
+        if (generate_week(&week_pool[i], job_pool) == 0) {
             return 0;
         }
     }
@@ -315,14 +320,18 @@ int generate_week(struct week* week, struct job* job_pool) {
     int i = 0;//job pool index
 
     while (!is_empty_job(&job_pool[i])) {
-        random_day = rand() % DAYS_PR_WEEK;//Select a random day
-        random_module = rand() % MODULES_PR_DAY;//Select a random module
+        printf("JOB POOL INDEX: %d: ", i);//DEBUG
+
+        //DEBUG
+        random_day = 0;//rand() % DAYS_PR_WEEK;//Select a random day
+        random_module = 0;//rand() % MODULES_PR_DAY;//Select a random module
 
         if (!insert_job_in_week(&job_pool[i], week, random_day, random_module)) {
             return 0;
         } else {
             i++;
         }
+        printf("Inserted!\n");
     }
 
     return 1;
@@ -334,7 +343,7 @@ int generate_week(struct week* week, struct job* job_pool) {
 int insert_job_in_week(struct job* job, struct week* week, int day, int module) {
     int d_day, d_module;//Delta-values for offsetting day and module.
     int e_day, e_module;//For storing the effective day and module indexes.
-    struct module* current_module;//For holding the module currently being tested for insertion.
+    struct module* current_module = 0;//For holding the module currently being tested for insertion.
 
 
     for (d_day = 0; d_day < DAYS_PR_WEEK; d_day++) {
@@ -354,15 +363,13 @@ int insert_job_in_week(struct job* job, struct week* week, int day, int module) 
 //Inserts a job in a module. Will respect teacher and class conflicts.
 //Returns NULL if error.
 int insert_job_in_module(struct job* job, struct module* module) {
-
     int i;//loop counter
 
     //Check for teacher and class conflicts.
-    if (is_teacher_conflict(module, job) || is_class_conflict(module, job)) {
+    if (is_class_conflict(module, job) || is_teacher_conflict(module, job)) {
+        printf("CONFLICT!\n");//DEBUG
         return 0;
     }
-
-
 
     //Insert job in first free job entry
     for (i = 0; i < JOBS_PR_MODULE; i++) {
@@ -394,10 +401,10 @@ int is_teacher_conflict(struct module* module, struct job* job) {
 
                 //printf("%s vs. %s\n", module->jobs[d_job].teacher[d_teacher], job->teacher[d_job_teacher]);/DEBUG
 
-                if (module->jobs[d_job].teacher[d_teacher][0]) {
+                if (!is_empty_job(&module->jobs[d_job])) {
                     if (!strcmp(module->jobs[d_job].teacher[d_teacher],
                                 job->teacher[d_job_teacher])) {
-                        printf("TEACHER CONFLICT!\n");//DEBUG
+                        printf("\tTEACHER ");//DEBUG
                         return 1;
                     }
                 }
@@ -414,10 +421,108 @@ int is_class_conflict(struct module* module, struct job* job) {
     int d_job;//job index offset
 
     for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
-        if(!strcmp(module->jobs[d_job].class, job->class)) {
-            return 1;
+        if (module->jobs[d_job].subject != prep) {
+            if(!strcmp(module->jobs[d_job].class, job->class)) {
+                printf("\tCLASS ");//DEBUG
+                return 1;
+            }
         }
     }
 
     return 0;
+}
+
+
+
+//Output the fittest of weeks in the population pool.
+void print_week(const struct week* fittest_week, char* teacher) {
+
+    int d,m;
+
+    FILE* out_ptr = fopen("SCHEDULE.txt", "w");
+    assert(out_ptr != 0);
+
+    fprintf(out_ptr, "The schedule for %s is as following:\n\n", teacher);
+    fprintf(out_ptr, "%-25s%-25s%-25s%-25s%-25s\n", "MAN", "TUE", "WED", "THU", "FRI");
+
+    //Loop checks every day, module and job for the teacher to print schedule for
+    for(m=0; m < MODULES_PR_DAY; m++) {
+        for(d=0; d < DAYS_PR_WEEK; d++) {
+            print_module(&fittest_week->days[d].modules[m], teacher, out_ptr);
+        }
+        fprintf(out_ptr, "\n\n");
+    }
+
+    fprintf(out_ptr, "Week printed for given teacher\n");
+
+    fclose(out_ptr);
+}
+
+//Function for printing one module for a teacher.
+//Prints empty module if no teacher matched.
+void print_module(const struct module* module, char* teacher, FILE* out_ptr) {
+    int j, t, found = 0;
+
+    for (j = 0; j < JOBS_PR_MODULE; j++) {
+        for (t = 0; t < TEACHERS_PR_JOB; t++) {
+            if (!strcmp(teacher, module->jobs[j].teacher[t])) {
+                found = 1;
+                print_subject(module->jobs[j].subject, out_ptr);
+                fprintf(out_ptr, "%-5s", module->jobs[j].class);
+            }
+        }
+    }
+
+    if (!found) {
+        fprintf(out_ptr, "%-25s", "-");
+    }
+    return;
+}
+
+//Function for printing the name of a subject
+void print_subject(enum subjects subject, FILE* out_ptr) {
+    switch (subject) {
+        case art:
+            fprintf(out_ptr, "%-20s", "billedkunst"); break;
+        case biology:
+            fprintf(out_ptr, "%-20s", "biologi"); break;
+        case danish:
+            fprintf(out_ptr, "%-20s", "dansk"); break;
+        case english:
+            fprintf(out_ptr, "%-20s", "engelsk"); break;
+        case physics:
+            fprintf(out_ptr, "%-20s", "fysik"); break;
+        case geography:
+            fprintf(out_ptr, "%-20s", "geografi"); break;
+        case history:
+            fprintf(out_ptr, "%-20s", "historie"); break;
+        case phys_ed:
+            fprintf(out_ptr, "%-20s", "idrat"); break;
+        case classtime:
+            fprintf(out_ptr, "%-20s", "klassens time"); break;
+        case religion:
+            fprintf(out_ptr, "%-20s", "kristendomskundskab"); break;
+        case cooking:
+            fprintf(out_ptr, "%-20s", "hjemkundskab"); break;
+        case math:
+            fprintf(out_ptr, "%-20s", "matematik"); break;
+        case music:
+            fprintf(out_ptr, "%-20s", "musik"); break;
+        case nature:
+            fprintf(out_ptr, "%-20s", "natur-teknik"); break;
+        case socialstud:
+            fprintf(out_ptr, "%-20s", "samfundsfag"); break;
+        case woodwork:
+            fprintf(out_ptr, "%-20s", "slojd"); break;
+        case german:
+            fprintf(out_ptr, "%-20s", "tysk"); break;
+        case elective:
+            fprintf(out_ptr, "%-20s", "valgfag"); break;
+        case prep:
+            fprintf(out_ptr, "%-20s", "forberedelsestid"); break;
+        case crafting:
+            fprintf(out_ptr, "%-20s", "haand"); break;
+    }
+
+    return;
 }

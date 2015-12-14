@@ -139,6 +139,8 @@ void print_subject(enum subjects subject, FILE* out_ptr);
 //Main function
 int main(int argc, char *argv[]){
 
+    printf("START!\n");
+
     struct week* week_pool = initialize_weeks(1);
     assert(week_pool != 0);
 
@@ -192,11 +194,8 @@ struct job* read_jobs(void) {
             done = 1;
         } else {
             job += n_insertions;
-            printf("INSERTION POINT = %d\n", job);//DEBUG
         }
     }
-
-    printf("JOBS INSERTED = %d\n", job);//DEBUG
 
     //Insert empty job
     strcpy(job_pool[job].teacher[0], "\0");
@@ -480,10 +479,15 @@ int is_class_conflict(struct module* module, struct job* job) {
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
-    int j, random_week_1=-123, random_week_2=-123,
+    int j, random_week_1 = 0, random_week_2 = 0,
         amount_killed=0, amount_living=0;
     int *individuals_killed = 0;
     fitted_population_t *population_fitnesses = 0;
+
+    init_fitness_of_weeks(population_fitnesses, population_pool, n);
+
+    amount_killed = n * ELIMINATION_PART;
+    amount_living = n - amount_killed;
 
     individuals_killed = (int *)malloc(sizeof(int)*amount_killed);
     assert(individuals_killed != NULL);
@@ -496,7 +500,7 @@ void next_generation(struct week* population_pool, unsigned int n) {
     individual_picker(population_fitnesses, individuals_killed, amount_killed, n);
 
     //Generates new population to fill out killed individuals.
-    //Creating from the surviving indivduals. FIX
+    //Creating from the surviving indivduals.
     for(j=0; j < amount_killed; j++){
         random_week_1 = gene_rand_num(amount_living);
         random_week_2 = gene_rand_num(amount_living);
@@ -555,7 +559,7 @@ void individual_picker(fitted_population_t *population_fitnesses,
 
     for(i=0; i < amount_killed;){
         for(j=0; j < n; j++){
-            selector = (double)gene_rand_num(biggest_roulette_part*1000000)/1000000; // FEJL, double og int problem
+            selector = (double)gene_rand_num(biggest_roulette_part*1000000)/1000000; // TODO: FEJL, double og int problem
             if(selector < population_fitnesses[j].roulette_part)
                 individuals_killed[i] = j;
                 i++;
@@ -591,10 +595,10 @@ void mutator(int j, int rand_1, fitted_population_t *population_fitnesses){
     temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[rand_1].week_pointer->days[DAY_TO_SWAP1];
 
     //kills individual j and makes new individual, with swapped days.
-    *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
+    *population_fitnesses[j].week_pointer = temporary_week;
 }
 
-//Function makes new individual from 2 random weeks. //FIX Lav bedre udvælgelse af gener.
+//Function makes new individual from 2 random weeks.
 void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *population_fitnesses){
     int d, m;
     struct week temporary_week;
@@ -621,7 +625,7 @@ void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *p
         }
     }
      //make new individual on element j, which is being discarded.
-    *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
+    *population_fitnesses[j].week_pointer = temporary_week;
 }
 
 
@@ -729,6 +733,7 @@ int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, in
     struct module* tested_module = 0;
     struct module* next_module = 0;
 
+    //Test if exceeding last module for a day
     if(m >= MODULES_PR_DAY){
         return 0;
     }
@@ -777,32 +782,29 @@ int fitness_function_no_free_space(struct week* individual, int d, int m, int j)
 int fitness_function_day_length(struct week* individual) {
     int d, day_length[DAYS_PR_WEEK];
     int sum_of_lengths = 0, week_points = 0;
-    double avg_day_length = 0, q_value = 0; //q_value worst case is 44, and this value expresses
-                                            //the deviation from the optimal day length this week
+    double avg_day_length = 0, deviation = 0;
 
+    //Calculate sum of day lengths and get each day's lengths.
     for(d = 0; d < DAYS_PR_WEEK; d++){
         day_length[d] = get_day_length(&individual->days[d]);
         sum_of_lengths += day_length[d];
     }
 
+    //Calculate average
     avg_day_length = sum_of_lengths / DAYS_PR_WEEK;
 
+    //Calculate total deviation from average
     for(d = 0; d < DAYS_PR_WEEK; d++){
-        q_value += (pow((day_length[d] - avg_day_length),2) / avg_day_length);
+         deviation += pow(day_length[d] - avg_day_length, 2);
     }
 
-    if(q_value >= 33){
-        week_points += 0;
-    }
-    else if(q_value >= 22 && q_value < 33){
-        week_points += SMALL_REWARD;
-    }
-    else if(q_value >= 11 && q_value < 22){
-        week_points += MEDIUM_REWARD;
-    }
-    else if(q_value < 11){
-        week_points += BIG_REWARD;
-    }
+    //Calculate percentage
+    deviation /= pow(sum_of_lengths, 2);
+
+    //Assign fitness points, based on the deviation.
+    //The bigger the deviation, the smaller the reward.
+    //A deviation of 0 results in an extreme reward
+    week_points = (1-deviation) * EXTREME_REWARD;
 
     return week_points;
 }
@@ -814,8 +816,10 @@ int get_day_length(struct day *day){
 
     for(m = 0; m < MODULES_PR_DAY; m++){
         for(j = 0; j < JOBS_PR_MODULE; j++){
-            if (strcmp(day->modules[m].jobs[j].teacher[0], "\0") != 0){
-                count++; break;
+            if (day->modules[m].jobs[j].subject != prep) {
+                if (strcmp(day->modules[m].jobs[j].teacher[0], "\0") != 0){
+                    count++; break;
+                }
             }
         }
     }

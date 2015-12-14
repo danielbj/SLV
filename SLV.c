@@ -137,15 +137,22 @@ void print_subject(enum subjects subject, FILE* out_ptr);
 
 
 //Main function
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
+    int i;
 
     printf("START!\n");
 
-    struct week* week_pool = initialize_weeks(1);
+    //Create a pool of reandom weeks
+    struct week* week_pool = initialize_weeks(100);
     assert(week_pool != 0);
 
-    print_week(&week_pool[0], "HM");
+    //Print the week to file
+    print_week(&week_pool[0], "LC");
 
+    //Test fitness!
+    for (i = 0; i < 100; i++) {
+        printf("\nFitness: %d\n", fitness_of_week(&week_pool[i]));
+    }
     printf("\nDONE!\n");
 
     return 0;
@@ -658,6 +665,15 @@ int fitness_of_week(struct week* individual) {
     total_fitness = (fitness_day_length + fitness_module_time + fitness_multiple_lessons +
                     fitness_no_free_space);
 
+    //DEBUG
+    printf("fitness_module_time: %d\n", fitness_module_time);
+    printf("fitness_multiple_lessons: %d\n", fitness_multiple_lessons);
+    printf("fitness_no_free_space: %d\n", fitness_no_free_space);
+    printf("fitness_day_length: %d\n", fitness_day_length);
+
+
+
+
     return total_fitness;
 }
 
@@ -745,16 +761,20 @@ int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, in
     //a break between the modules or without (hence m%2).
     for(i = 0; i < JOBS_PR_MODULE; i++){
         if (tested_module->jobs[j].subject == next_module->jobs[i].subject &&
-            tested_module->jobs[j].class == next_module->jobs[i].class &&
+            (strcmp(tested_module->jobs[j].class, next_module->jobs[i].class) == 0) &&
+            tested_module->jobs[j].subject != prep &&
+            (strcmp(tested_module->jobs[j].teacher[0], "\0") != 0) &&
             m % 2 == 0) {
 
-            fitness_multiple_lessons += EXTREME_REWARD;
+            fitness_multiple_lessons += EXTREME_REWARD; break;
         }
         else if (tested_module->jobs[j].subject == next_module->jobs[i].subject &&
-                tested_module->jobs[j].class == next_module->jobs[i].class &&
+                (strcmp(tested_module->jobs[j].class, next_module->jobs[i].class) == 0) &&
+                tested_module->jobs[j].subject != prep &&
+                (strcmp(tested_module->jobs[j].teacher[0], "\0") != 0) &&
                 m % 2 == 1) {
 
-            fitness_multiple_lessons += BIG_REWARD;
+            fitness_multiple_lessons += BIG_REWARD; break;
         }
     }
 
@@ -781,7 +801,7 @@ int fitness_function_no_free_space(struct week* individual, int d, int m, int j)
 //Function tests deviation from optimal day length in a week
 int fitness_function_day_length(struct week* individual) {
     int d, day_length[DAYS_PR_WEEK];
-    int sum_of_lengths = 0, week_points = 0;
+    int sum_of_lengths = 0, fitness_day_length = 0;
     double avg_day_length = 0, deviation = 0;
 
     //Calculate sum of day lengths and get each day's lengths.
@@ -795,18 +815,20 @@ int fitness_function_day_length(struct week* individual) {
 
     //Calculate total deviation from average
     for(d = 0; d < DAYS_PR_WEEK; d++){
-         deviation += pow(day_length[d] - avg_day_length, 2);
+         deviation += pow(day_length[d] - avg_day_length, 2) / avg_day_length;
     }
 
     //Calculate percentage
-    deviation /= pow(sum_of_lengths, 2);
+    //deviation /= pow(sum_of_lengths, 1);
 
     //Assign fitness points, based on the deviation.
     //The bigger the deviation, the smaller the reward.
     //A deviation of 0 results in an extreme reward
-    week_points = (1-deviation) * EXTREME_REWARD;
+    fitness_day_length = (1-deviation) * EXTREME_REWARD;
 
-    return week_points;
+    printf("DEV: %lf\n", deviation);//DEBUG
+
+    return fitness_day_length;
 }
 
 //counts amount of non-free modules in a day.
@@ -818,7 +840,7 @@ int get_day_length(struct day *day){
         for(j = 0; j < JOBS_PR_MODULE; j++){
             if (day->modules[m].jobs[j].subject != prep) {
                 if (strcmp(day->modules[m].jobs[j].teacher[0], "\0") != 0){
-                    count++; break;
+                    count++;// break;
                 }
             }
         }

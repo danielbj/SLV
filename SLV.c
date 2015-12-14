@@ -53,8 +53,6 @@ enum subjects {
     nature,     //natur-teknik
     biology,    //biologi
     history,    //historie
-    phys_ed,    //idræt
-    classtime,  //klassens time
     religion,   //kristendomskundskab
     geography,  //geografi
     socialstud, //samfundsfag
@@ -150,6 +148,7 @@ int main(int argc, char *argv[]){
 
     return 0;
 }
+
 
 
 //Input + generation + sanitation
@@ -478,8 +477,6 @@ int is_class_conflict(struct module* module, struct job* job) {
 
 
 
-
-
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
@@ -626,8 +623,6 @@ void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *p
      //make new individual on element j, which is being discarded.
     *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
 }
-
-
 
 
 

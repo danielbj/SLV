@@ -6,45 +6,69 @@
 //
 
 //Includes
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <assert.h>
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "time.h"
+#include "assert.h"
+#include "math.h"
 
 //Constants
 #define TEACHER_IDENTIFIER_LENGTH (3+1)
 #define CLASS_IDENTIFIER_LENGTH (4+1)
 #define TEACHERS_PR_JOB (3)
-#define JOBS_PR_MODULE (20)
-#define MODULES_PR_DAY (30)
+#define JOBS_PR_MODULE (17)
+#define MODULES_PR_DAY (11)
 #define DAYS_PR_WEEK (5)
+
 #define MAX_SUBJECT_CHARS (20)
 #define EXPECTED_MIN_SCANS (4)
 #define MAX_LINE_LENGTH (50)
 #define JOB_FILE_NAME "jobs.txt"
 
+#define ELIMINATION_PART (0.5)
+#define MUTATION_PART 0.10
+#define DAY_TO_SWAP1 1
+#define DAY_TO_SWAP2 5
+
+#define HARD_SUBJECTS (3)
+#define MEDIUM_SUBJECTS (10)
+#define SOFT_SUBJECTS (17)
+#define EXTREME_REWARD (6)
+#define BIG_REWARD (3)
+#define MEDIUM_REWARD (2)
+#define SMALL_REWARD (1)
+#define MAX_Q_VALUE (100)
+
 //Enumerations
 enum subjects {
-    art,        //billedkunst
-    biology,    //biologi
+    //Hard Subjects - 3
+    math,       //matematik
     danish,     //dansk
     english,    //engelsk
+    german,     //tysk
+
+    //Medium subjects - 10
     physics,    //fysik
-    geography,  //geografi
+    nature,     //natur-teknik
+    biology,    //biologi
     history,    //historie
-    crafting,   //håndarbejde (ER IKKE MED I DATAEN MERE)
     phys_ed,    //idræt
     classtime,  //klassens time
     religion,   //kristendomskundskab
-    cooking,    //hjemkundskab
-    math,       //matematik
-    music,      //musik
-    nature,     //natur-teknik
+    geography,  //geografi
     socialstud, //samfundsfag
+
+    //Soft subjects - 17
+    classtime,  //klassens time
+    art,        //billedkunst
+    music,      //musik
+    cooking,    //hjemkundskab
     woodwork,   //sløjd
-    german,     //tysk
+    phys_ed,    //idræt
     elective,    //valgfag
+
+    //Special subjects - 18
     prep        //forberedelsestid
 };
 
@@ -53,7 +77,7 @@ struct job {
     char teacher[TEACHERS_PR_JOB][TEACHER_IDENTIFIER_LENGTH];
     char class[CLASS_IDENTIFIER_LENGTH];
     enum subjects subject;
-    enum subjects sec_subject;
+    int prep_confirmed;
 };
 
 struct module {
@@ -68,9 +92,14 @@ struct week {
     struct day days[DAYS_PR_WEEK];
 };
 
+typedef struct fitted_population {
+    int week_fitness;
+    struct week *week_pointer;
+    double roulette_part;
+} fitted_population_t;
+
 //Function prototypes
 struct week* initialize_weeks(int n);
-
 struct job* read_jobs(void);
 int read_job(struct job* job, FILE* file);
 struct job* job_counter(FILE* file);
@@ -83,6 +112,25 @@ int insert_job_in_module(struct job* job, struct module* module);
 int is_empty_job(struct job* job);
 int is_teacher_conflict(struct module* module, struct job* job);
 int is_class_conflict(struct module* module, struct job* job);
+
+void next_generation(struct week* population_pool, unsigned int n);
+int compare_fitness(const void *a, const void *b);
+void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
+                              struct week* population_pool, unsigned int n);
+void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned int n);
+void individual_picker(fitted_population_t *population_fitnesses,
+                       int *individuals_killed, int amount_killed,
+                       unsigned int n);
+int gene_rand_num(int amount_killed);
+void mutator(int j, int rand_1, fitted_population_t *population_fitnesses);
+void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *population_fitnesses);
+
+int fitness_of_week(struct week* individual);
+int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, int j);
+int fitness_function_module_time(struct week* individual, int d, int m, int j);
+int fitness_function_no_free_space(struct week* individual, int d, int m, int j);
+int fitness_function_day_length(struct week* individual);
+int get_day_length(struct day *day);
 
 void print_week(const struct week* fittest_week, char* teacher);
 void print_module(const struct module* module, char* teacher, FILE* out_ptr);
@@ -149,8 +197,10 @@ struct job* read_jobs(void) {
         }
     }
 
+    printf("JOBS INSERTED = %d\n", job);//DEBUG
+
     //Insert empty job
-    job_pool[job].teacher[0][0] = 0;
+    strcpy(job_pool[job].teacher[0], "\0");
 
     fclose(file);
     return job_pool;
@@ -168,8 +218,7 @@ int read_job(struct job* job, FILE* file) {
 
     //Nullify teachers
     for (i = 0; i < TEACHERS_PR_JOB; i++) {
-        temp_job.teacher[i][0] = 0;
-        temp_job.teacher[i][TEACHER_IDENTIFIER_LENGTH - 1] = 0;
+        strcpy(temp_job.teacher[i],"\0");
     }
 
     //Read one line from the file
@@ -211,7 +260,7 @@ struct job* job_counter(FILE* file) {
         n_jobs += new;
     }
 
-    printf("%d", n_jobs);
+    printf("Jobs counted %d\n", n_jobs); //Debug
 
     struct job* job_pool = malloc(sizeof(struct job) * (n_jobs+1));
     assert(job_pool != 0);
@@ -280,9 +329,8 @@ enum subjects translate_subject(char temp_subject[]) {
         trans_subject = elective;
     }
     else if(strncmp(temp_subject, "Forberedelsestid", 4) == 0) {
-        trans_subject = elective;
+        trans_subject = prep;
     }
-
 
     return trans_subject;
 }
@@ -301,6 +349,8 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
 
     //Generate n weeks
     for (i = 0; i < number_of_weeks; i++) {
+        printf("Week %d ", i); //Debug
+
         if (generate_week(&week_pool[i], job_pool) == 0) {
             return 0;
         }
@@ -320,19 +370,18 @@ int generate_week(struct week* week, struct job* job_pool) {
     int i = 0;//job pool index
 
     while (!is_empty_job(&job_pool[i])) {
-        printf("JOB POOL INDEX: %d: ", i);//DEBUG
-
-        //DEBUG
-        random_day = 0;//rand() % DAYS_PR_WEEK;//Select a random day
-        random_module = 0;//rand() % MODULES_PR_DAY;//Select a random module
+        random_day = rand() % DAYS_PR_WEEK;//Select a random day
+        random_module = rand() % MODULES_PR_DAY;//Select a random module
 
         if (!insert_job_in_week(&job_pool[i], week, random_day, random_module)) {
             return 0;
         } else {
             i++;
         }
-        printf("Inserted!\n");
     }
+
+    //Debug
+    printf("JOB POOL INDEX: %d: INSERTED\n", i);
 
     return 1;
 }
@@ -350,13 +399,14 @@ int insert_job_in_week(struct job* job, struct week* week, int day, int module) 
         for (d_module = 0; d_module < MODULES_PR_DAY; d_module++) {
             e_day = (day + d_day) % DAYS_PR_WEEK;
             e_module = (module + d_module) % MODULES_PR_DAY;
-            current_module = &week->days[e_day].modules[e_module];
+            current_module = &week->days[e_day].modules[e_module]; //CONFLIC e_day = 0 & e_module = 1 se længere nede
             if (insert_job_in_module(job, current_module)) {
                 return 1;
             }
         }
     }
-
+    printf("Couldnt place following job: teacher %s & %s & %s and class %s \n",
+            job->teacher[0], job->teacher[1], job->teacher[2], job->class);
     return 0;
 }
 
@@ -367,7 +417,6 @@ int insert_job_in_module(struct job* job, struct module* module) {
 
     //Check for teacher and class conflicts.
     if (is_class_conflict(module, job) || is_teacher_conflict(module, job)) {
-        printf("CONFLICT!\n");//DEBUG
         return 0;
     }
 
@@ -385,7 +434,7 @@ int insert_job_in_module(struct job* job, struct module* module) {
 //Function for checking if a job is empty.
 //Returns !NULL if empty.
 int is_empty_job(struct job* job) {
-    return job->teacher[0][0] == 0;
+    return (strcmp(job->teacher[0],"\0") == 0);
 }
 
 //Function for checking for teacher conflicts in a module.
@@ -398,13 +447,9 @@ int is_teacher_conflict(struct module* module, struct job* job) {
     for (d_job_teacher = 0; d_job_teacher < TEACHERS_PR_JOB; d_job_teacher++) {
         for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
             for (d_teacher = 0; d_teacher < TEACHERS_PR_JOB; d_teacher++) {
-
-                //printf("%s vs. %s\n", module->jobs[d_job].teacher[d_teacher], job->teacher[d_job_teacher]);/DEBUG
-
-                if (!is_empty_job(&module->jobs[d_job])) {
-                    if (!strcmp(module->jobs[d_job].teacher[d_teacher],
-                                job->teacher[d_job_teacher])) {
-                        printf("\tTEACHER ");//DEBUG
+                if (strcmp(module->jobs[d_job].teacher[d_teacher], "\0") != 0) {
+                    if (strcmp(module->jobs[d_job].teacher[d_teacher],
+                                job->teacher[d_job_teacher]) == 0) {
                         return 1;
                     }
                 }
@@ -423,7 +468,6 @@ int is_class_conflict(struct module* module, struct job* job) {
     for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
         if (module->jobs[d_job].subject != prep) {
             if(!strcmp(module->jobs[d_job].class, job->class)) {
-                printf("\tCLASS ");//DEBUG
                 return 1;
             }
         }
@@ -433,6 +477,355 @@ int is_class_conflict(struct module* module, struct job* job) {
 }
 
 
+
+
+
+//Function that generates a new population.
+//This function overwrites the initial population (thus returning void).
+void next_generation(struct week* population_pool, unsigned int n) {
+    int j, random_week_1=-123, random_week_2=-123,
+        amount_killed=0, amount_living=0;
+    int *individuals_killed = 0;
+    fitted_population_t *population_fitnesses = 0;
+
+    individuals_killed = (int *)malloc(sizeof(int)*amount_killed);
+    assert(individuals_killed != NULL);
+
+    //sorts the array, so that the fittest individuals are placed first.
+    qsort(population_fitnesses,n,sizeof(fitted_population_t),compare_fitness);
+
+    assign_roulette_part(population_fitnesses,n);
+
+    individual_picker(population_fitnesses, individuals_killed, amount_killed, n);
+
+    //Generates new population to fill out killed individuals.
+    //Creating from the surviving indivduals. FIX
+    for(j=0; j < amount_killed; j++){
+        random_week_1 = gene_rand_num(amount_living);
+        random_week_2 = gene_rand_num(amount_living);
+
+        //New mutated individual.
+        if(random_week_1 < (n * MUTATION_PART)){
+            mutator(individuals_killed[j], random_week_1, population_fitnesses);
+        }
+        //New individual
+        else{
+            create_new_individual(individuals_killed[j], random_week_1, random_week_2, population_fitnesses);
+        }
+
+    }
+
+    free(population_fitnesses);
+    free(individuals_killed);
+}
+
+void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
+                              struct week* population_pool, unsigned int n){
+    int i;
+
+    population_fitnesses = (fitted_population_t *)malloc(sizeof(fitted_population_t) * n);
+    //Fills array with fitnesses.
+    for(i=0; i < n; i++){
+        population_fitnesses[i].week_fitness = fitness_of_week(&population_pool[i]);
+        population_fitnesses[i].week_pointer = &population_pool[i];
+    }
+}
+
+//Gives every individual a share of the roulette to be eliminated from.
+void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned int n){
+    int i, total_fitness_of_weeks = 0;
+
+    //Calculates the total fitness for this generation
+    for (i = 0; i < n; i++) {
+        total_fitness_of_weeks += population_fitnesses[i].week_fitness;
+    }
+
+    for (i = 0; i < n; i++) {
+        population_fitnesses[i].roulette_part = 1/(population_fitnesses[i].week_fitness/
+                                                   total_fitness_of_weeks);
+    }
+}
+
+//Picks individuals with bigger value than the random number, which is constantly changed
+//Individuals picked till amount_killed reached.
+void individual_picker(fitted_population_t *population_fitnesses,
+                       int *individuals_killed, int amount_killed,
+                       unsigned int n){
+    int i,j;
+    double biggest_roulette_part = 0, selector = 0;
+
+    biggest_roulette_part = population_fitnesses[n-1].roulette_part;
+
+    for(i=0; i < amount_killed;){
+        for(j=0; j < n; j++){
+            selector = (double)gene_rand_num(biggest_roulette_part*1000000)/1000000; // FEJL, double og int problem
+            if(selector < population_fitnesses[j].roulette_part)
+                individuals_killed[i] = j;
+                i++;
+        }
+    }
+}
+
+//sorts the array (most fit to least fit)
+int compare_fitness(const void *a, const void *b){
+    fitted_population_t *ca = (fitted_population_t *)a;
+    fitted_population_t *cb = (fitted_population_t *)b;
+
+    return cb->week_fitness - ca->week_fitness;
+}
+
+//Generates random number from 0 to input-1.
+int gene_rand_num(int n){
+    return rand()%n;
+}
+
+//Mutates individual by swapping 2 days in a random week chosen.
+void mutator(int j, int rand_1, fitted_population_t *population_fitnesses){
+    int d;
+    struct week temporary_week;
+
+    //intitialize and fills temporary week.
+    for(d=0; d < DAYS_PR_WEEK; d++){
+        temporary_week.days[d] = population_fitnesses[rand_1].week_pointer->days[d];
+    }
+
+    //Mutation
+    temporary_week.days[DAY_TO_SWAP1] = population_fitnesses[rand_1].week_pointer->days[DAY_TO_SWAP2];
+    temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[rand_1].week_pointer->days[DAY_TO_SWAP1];
+
+    //kills individual j and makes new individual, with swapped days.
+    *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
+}
+
+//Function makes new individual from 2 random weeks. //FIX Lav bedre udvælgelse af gener.
+void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *population_fitnesses){
+    int d, m;
+    struct week temporary_week;
+
+    //These loops mixes days and modules into a new week(individual).
+    for(d=0; d < DAYS_PR_WEEK; d++){
+        for(m=0; m < MODULES_PR_DAY; m++){
+            if(0 <= d && d < 2){
+                if(0 <= m && m < 3){
+                    temporary_week.days[d].modules[m] = population_fitnesses[rand_1].week_pointer->days[d].modules[m];
+                }
+                else{
+                    temporary_week.days[d].modules[m] = population_fitnesses[rand_2].week_pointer->days[d].modules[m];
+                }
+            }
+            else{
+                if(0 <= m && m <3){
+                    temporary_week.days[d].modules[m] = population_fitnesses[rand_2].week_pointer->days[d].modules[m];
+                }
+                else{
+                    temporary_week.days[d].modules[m] = population_fitnesses[rand_1].week_pointer->days[d].modules[m];
+                }
+            }
+        }
+    }
+     //make new individual on element j, which is being discarded.
+    *population_fitnesses[j].week_pointer = temporary_week; //FIX week_pointer (evt fyld alle dage)
+}
+
+
+
+
+
+//Tests the total fitness of a week.
+//Returns this fitness
+int fitness_of_week(struct week* individual) {
+    int fitness_module_time = 0;                     //Placering af fag tidsmæssigt.
+    int fitness_multiple_lessons = 0;                //To fag i streg.
+    int fitness_no_free_space = 0;                   //Ingen hul timer.
+    int fitness_day_length = 0;
+    int d, m, j, total_fitness = 0;
+
+    fitness_day_length = fitness_function_day_length(individual);
+
+    for (d = 0; d < DAYS_PR_WEEK; d++) {
+        for (m = 0; m < MODULES_PR_DAY; m++) {
+            for (j = 0; j < JOBS_PR_MODULE; j++) {
+
+                fitness_module_time += fitness_function_module_time(individual, d, m, j);
+
+                fitness_multiple_lessons += fitness_function_mulitiple_lessons(individual, d, m, j);
+
+                fitness_no_free_space += fitness_function_no_free_space(individual, d, m, j);
+            }
+        }
+    }
+
+
+    total_fitness = (fitness_day_length + fitness_module_time + fitness_multiple_lessons +
+                    fitness_no_free_space);
+
+    return total_fitness;
+}
+
+//Funcion for testing a modules placement on a day,
+//while considering the difficulty of the subject taught.
+int fitness_function_module_time(struct week* individual, int d, int m, int j) {
+    int fitness_modules_time = 0;
+    enum subjects tested_subject = 0;
+
+    tested_subject = individual->days[d].modules[m].jobs[j].subject;
+
+    //Tests for placement of preperation time in the day
+    if (tested_subject == prep) {
+        if(m < 2) {
+            fitness_modules_time += SMALL_REWARD;
+        }
+        else if (m < 4) {
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if (m < 8) {
+            fitness_modules_time += BIG_REWARD;
+        }
+        else {
+            fitness_modules_time += EXTREME_REWARD;
+        }
+    }
+
+    //Tests for hard subjects and placement on the day
+    if (tested_subject <= HARD_SUBJECTS){
+        if(m < 2) {
+            fitness_modules_time += BIG_REWARD;
+        }
+        else if (m < 4) {
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if (m < 8) {
+            fitness_modules_time += SMALL_REWARD;
+        }
+    }
+
+    //Tests for medium difficulty subjects and placement on the day
+    if (tested_subject > HARD_SUBJECTS && tested_subject <= MEDIUM_SUBJECTS) {
+        if(m < 2){
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if(m < 4){
+            fitness_modules_time += BIG_REWARD;
+        }
+        else if(m < 8){
+            fitness_modules_time += SMALL_REWARD;
+        }
+    }
+
+    //Tests for a soft subject and placement on the day
+    if (tested_subject > MEDIUM_SUBJECTS && tested_subject <= SOFT_SUBJECTS){
+        if(m < 2) {
+            fitness_modules_time += SMALL_REWARD;
+        }
+        else if (m < 4) {
+            fitness_modules_time += MEDIUM_REWARD;
+        }
+        else if (m < 8) {
+            fitness_modules_time += BIG_REWARD;
+        }
+    }
+
+    return fitness_modules_time;
+}
+
+//Funtion for testing the event of 2 lessons in a row, and reward such case.
+int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, int j){
+    int i, fitness_multiple_lessons = 0;
+    struct module* tested_module = 0;
+    struct module* next_module = 0;
+
+    if(m >= MODULES_PR_DAY){
+        return 0;
+    }
+
+    tested_module = &individual->days[d].modules[m];
+    next_module = &individual->days[d].modules[m+1];
+
+    //Loop tests if 2 subjects for the same class appears consecutively in 2 modules, either with
+    //a break between the modules or without (hence m%2).
+    for(i = 0; i < JOBS_PR_MODULE; i++){
+        if (tested_module->jobs[j].subject == next_module->jobs[i].subject &&
+            tested_module->jobs[j].class == next_module->jobs[i].class &&
+            m % 2 == 0) {
+
+            fitness_multiple_lessons += EXTREME_REWARD;
+        }
+        else if (tested_module->jobs[j].subject == next_module->jobs[i].subject &&
+                tested_module->jobs[j].class == next_module->jobs[i].class &&
+                m % 2 == 1) {
+
+            fitness_multiple_lessons += BIG_REWARD;
+        }
+    }
+
+    return fitness_multiple_lessons;
+}
+
+//Functions tests for space between modules on a day.
+int fitness_function_no_free_space(struct week* individual, int d, int m, int j) {
+    int fitness_no_free_space = 0;
+
+    //Tests for a the presence of a teacher.
+    if (strcmp(individual->days[d].modules[m].jobs[j].teacher[0], "\0") == 0){
+        if (m >= 8){
+            fitness_no_free_space += BIG_REWARD;
+        }
+        else{
+            fitness_no_free_space += 0;
+        }
+    }
+
+    return fitness_no_free_space;
+}
+
+//Function tests deviation from optimal day length in a week
+int fitness_function_day_length(struct week* individual) {
+    int d, day_length[DAYS_PR_WEEK];
+    int sum_of_lengths = 0, week_points = 0;
+    double avg_day_length = 0, q_value = 0; //q_value worst case is 44, and this value expresses
+                                            //the deviation from the optimal day length this week
+
+    for(d = 0; d < DAYS_PR_WEEK; d++){
+        day_length[d] = get_day_length(&individual->days[d]);
+        sum_of_lengths += day_length[d];
+    }
+
+    avg_day_length = sum_of_lengths / DAYS_PR_WEEK;
+
+    for(d = 0; d < DAYS_PR_WEEK; d++){
+        q_value += (pow((day_length[d] - avg_day_length),2) / avg_day_length);
+    }
+
+    if(q_value >= 33){
+        week_points += 0;
+    }
+    else if(q_value >= 22 && q_value < 33){
+        week_points += SMALL_REWARD;
+    }
+    else if(q_value >= 11 && q_value < 22){
+        week_points += MEDIUM_REWARD;
+    }
+    else if(q_value < 11){
+        week_points += BIG_REWARD;
+    }
+
+    return week_points;
+}
+
+//counts amount of non-free modules in a day.
+int get_day_length(struct day *day){
+    int m,j;
+    int count;
+
+    for(m = 0; m < MODULES_PR_DAY; m++){
+        for(j = 0; j < JOBS_PR_MODULE; j++){
+            if (strcmp(day->modules[m].jobs[j].teacher[0], "\0") != 0){
+                count++; break;
+            }
+        }
+    }
+    return count;
+}
 
 //Output the fittest of weeks in the population pool.
 void print_week(const struct week* fittest_week, char* teacher) {
@@ -453,7 +846,7 @@ void print_week(const struct week* fittest_week, char* teacher) {
         fprintf(out_ptr, "\n\n");
     }
 
-    fprintf(out_ptr, "Week printed for given teacher\n");
+    fprintf(out_ptr, "\nWeek printed for given teacher\n");
 
     fclose(out_ptr);
 }
@@ -497,7 +890,7 @@ void print_subject(enum subjects subject, FILE* out_ptr) {
         case history:
             fprintf(out_ptr, "%-20s", "historie"); break;
         case phys_ed:
-            fprintf(out_ptr, "%-20s", "idrat"); break;
+            fprintf(out_ptr, "%-20s", "idraet"); break;
         case classtime:
             fprintf(out_ptr, "%-20s", "klassens time"); break;
         case religion:
@@ -513,15 +906,13 @@ void print_subject(enum subjects subject, FILE* out_ptr) {
         case socialstud:
             fprintf(out_ptr, "%-20s", "samfundsfag"); break;
         case woodwork:
-            fprintf(out_ptr, "%-20s", "slojd"); break;
+            fprintf(out_ptr, "%-20s", "sloejd"); break;
         case german:
             fprintf(out_ptr, "%-20s", "tysk"); break;
         case elective:
             fprintf(out_ptr, "%-20s", "valgfag"); break;
         case prep:
             fprintf(out_ptr, "%-20s", "forberedelsestid"); break;
-        case crafting:
-            fprintf(out_ptr, "%-20s", "haand"); break;
     }
 
     return;

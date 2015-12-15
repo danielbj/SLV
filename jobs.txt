@@ -31,13 +31,13 @@
 1   Historie    7.  JJ 
 1   Historie    9.  LC 
 2   Historie    7.  JJ 
-2   Idræt   8. LC 
-2   Idræt   9. LC
-4   Idræt   AI1A    CAH KI 
-2   Idræt   AI2A   MD MK PP 
-2   Idræt   AI2B   MD MK PP 
-2   Idræt   6.    LC 
-2   Idræt   7.    LC 
+2   Idraet   8. LC 
+2   Idraet   9. LC
+4   Idraet   AI1A    CAH KI 
+2   Idraet   AI2A   MD MK PP 
+2   Idraet   AI2B   MD MK PP 
+2   Idraet   6.    LC 
+2   Idraet   7.    LC 
 1   Klassenstid     9.  LC 
 1   Klassenstid     8.  MD 
 1   Klassenstid     AI1A    CAH KI MG 
@@ -71,7 +71,7 @@
 2   Natur/teknik    6.  JJ 
 2   Samfundsfag     9.  LC 
 2   Samfundsfag     8.  LC 
-2   Sløjd   6.  PK
+2   Sloejd   6.  PK
 2   Tysk    6.  KT 
 3   Tysk    7.  KT 
 3   Tysk    8.  KT 

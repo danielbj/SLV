@@ -28,8 +28,6 @@
 
 #define ELIMINATION_PART (0.5)
 #define MUTATION_PART 0.10
-#define DAY_TO_SWAP1 0
-#define DAY_TO_SWAP2 4
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -128,7 +126,7 @@ void individual_picker(fitted_population_t *population_fitnesses,
 int check_not_picked(int *individuals_killed, int j, int i);
 int gene_rand_num(int amount_killed);
 void mutator(int j, int random_week, fitted_population_t *population_fitnesses);
-void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *population_fitnesses);
+void create_new_individual(int j, int random_week, fitted_population_t *population_fitnesses);
 
 int fitness_of_week(struct week* individual);
 int fitness_function_mulitiple_lessons(struct week* individual, int d, int m, int j);
@@ -143,7 +141,7 @@ void print_subject(enum subjects subject, FILE* out_ptr);
 
 //Main function
 int main(int argc, char *argv[]) {
-    int i;
+    int i, g;
     struct week* week_pool;
     fitted_population_t *population_fitnesses;
 
@@ -155,9 +153,9 @@ int main(int argc, char *argv[]) {
 
     print_week(&week_pool[0], "LC");
 
-    scanf("%d", &i);
+    scanf("%d", &g);
     //Make ONE new generation
-    for(i=0; i<10; i++){
+    for(i=0; i<g; i++){
       next_generation(week_pool, 100);
     }
 
@@ -218,6 +216,8 @@ struct job* read_jobs(void) {
             job += n_insertions;
         }
     }
+
+    printf("Jobs inserted %d \n", job); //debug
 
     //Insert empty job
     strcpy(job_pool[job].teacher[0], "\0");
@@ -280,7 +280,7 @@ struct job* job_counter(FILE* file) {
         n_jobs += new;
     }
 
-    //printf("Jobs counted %d\n", n_jobs); //Debug
+    printf("Jobs counted %d\n", n_jobs); //Debug
 
     struct job* job_pool = malloc(sizeof(struct job) * (n_jobs+1));
     assert(job_pool != 0);
@@ -315,7 +315,7 @@ enum subjects translate_subject(char temp_subject[]) {
     else if(strncmp(temp_subject, "Historie", 4) == 0) {
         trans_subject = history;
     }
-    else if(strncmp(temp_subject, "Idræt", 4) == 0) {
+    else if(strncmp(temp_subject, "Idraet", 4) == 0) {
         trans_subject = phys_ed;
     }
     else if(strncmp(temp_subject, "Klassenstid", 4) == 0) {
@@ -339,7 +339,7 @@ enum subjects translate_subject(char temp_subject[]) {
     else if(strncmp(temp_subject, "Samfundsfag", 4) == 0) {
         trans_subject = socialstud;
     }
-    else if(strncmp(temp_subject, "Sløjd", 4) == 0) {
+    else if(strncmp(temp_subject, "Sloejd", 4) == 0) {
         trans_subject = woodwork;
     }
     else if(strncmp(temp_subject, "Tysk", 4) == 0) {
@@ -501,7 +501,7 @@ int is_class_conflict(struct module* module, struct job* job) {
 //Function that generates a new population.
 //This function overwrites the initial population (thus returning void).
 void next_generation(struct week* population_pool, unsigned int n) {
-    int j, random_week_1 = 0, random_week_2 = 0,
+    int j, random_week,
         amount_killed=0, amount_living=0, random_decider = 0;
     int *individuals_killed = 0;
     fitted_population_t *population_fitnesses = 0;
@@ -526,22 +526,21 @@ void next_generation(struct week* population_pool, unsigned int n) {
     //Creating from the surviving indivduals.
     for(j=0; j < amount_killed; j++){
         //Picks the random weeks among all weeks to be parents of new child
-        random_week_1 = gene_rand_num(amount_living);
-        random_week_2 = gene_rand_num(amount_living);
+        random_week = gene_rand_num(amount_living);
         random_decider = gene_rand_num(n);
 
         //DEBUG
-        printf("J: %d\n", j);
-        printf("random week: %d\n", random_week_1);
+        //printf("J: %d ", j);
+        //printf("random week: %d\n", random_week_1);
 
         //New mutated individual.
         if(random_decider < (n * MUTATION_PART)){
-            mutator(individuals_killed[j], random_week_1, population_fitnesses);
+            mutator(individuals_killed[j], random_week, population_fitnesses);
         }
 
         //New individual
         else{
-            create_new_individual(individuals_killed[j], random_week_1, random_week_2, population_fitnesses);
+            create_new_individual(individuals_killed[j], random_week, population_fitnesses);
         }
 
     }
@@ -579,6 +578,8 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
     for (i = 0; i < n; i++) {
         total_fitness_of_weeks += population_fitnesses[i].week_fitness;
     }
+
+    printf("Total fitness for the generation: %d\n", total_fitness_of_weeks);
 
     //Calculates roulette part for each individual
     for (i = 0; i < n; i++) {
@@ -637,13 +638,19 @@ int compare_fitness(const void *a, const void *b){
 
 //Generates random number from 0 to input-1.
 int gene_rand_num(int n){
+    if(n==0){
+        return 0;
+    }
     return rand()%n;
 }
 
 //Mutates individual by swapping 2 days in a random week chosen.
 void mutator(int j, int random_week, fitted_population_t *population_fitnesses){
-    int d;
+    int d, day_to_swap1 = 0, day_to_swap2 = 0;
     struct week temporary_week;
+
+    day_to_swap1 = gene_rand_num(5);
+    day_to_swap2 = gene_rand_num(5);
 
     temporary_week = *population_fitnesses[random_week].week_pointer;
 
@@ -653,8 +660,8 @@ void mutator(int j, int random_week, fitted_population_t *population_fitnesses){
     }
 
     //Mutation
-    temporary_week.days[DAY_TO_SWAP1] = population_fitnesses[random_week].week_pointer->days[DAY_TO_SWAP2];
-    temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[random_week].week_pointer->days[DAY_TO_SWAP1];
+    temporary_week.days[day_to_swap1] = population_fitnesses[random_week].week_pointer->days[day_to_swap2];
+    temporary_week.days[day_to_swap2] = population_fitnesses[random_week].week_pointer->days[day_to_swap1];
 
     //kills individual j and makes new individual, with swapped days.
     *population_fitnesses[j].week_pointer = temporary_week;
@@ -665,10 +672,12 @@ void mutator(int j, int random_week, fitted_population_t *population_fitnesses){
 }
 
 //Function makes new individual from 2 random weeks.
-void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *population_fitnesses){
+void create_new_individual(int j, int random_week, fitted_population_t *population_fitnesses){
     int d, m;
     struct week temporary_week;
 
+    //DEBUG TODO: MIX DAYS OTHERWISE
+    
     //These loops mixes days and modules into a new week(individual).
     for(d=0; d < DAYS_PR_WEEK; d++){
         for(m=0; m < MODULES_PR_DAY; m++){
@@ -728,7 +737,7 @@ int fitness_of_week(struct week* individual) {
     //printf("%-4d\t", fitness_module_time);
     //printf("%-4d\t", fitness_multiple_lessons);
     //printf("%-4d\t", fitness_no_free_space);
-    printf("total fitness: %-5d\n", total_fitness);
+    //printf("total fitness: %-5d\n", total_fitness);
 
 
 

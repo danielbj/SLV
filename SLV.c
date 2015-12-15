@@ -11,7 +11,6 @@
 #include "string.h"
 #include "time.h"
 #include "assert.h"
-#include "math.h"
 
 //Constants
 #define TEACHER_IDENTIFIER_LENGTH (3+1)
@@ -29,8 +28,8 @@
 
 #define ELIMINATION_PART (0.5)
 #define MUTATION_PART 0.10
-#define DAY_TO_SWAP1 1
-#define DAY_TO_SWAP2 5
+#define DAY_TO_SWAP1 0
+#define DAY_TO_SWAP2 4
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -84,7 +83,6 @@ struct job {
     char teacher[TEACHERS_PR_JOB][TEACHER_IDENTIFIER_LENGTH];
     char class[CLASS_IDENTIFIER_LENGTH];
     enum subjects subject;
-    int prep_confirmed;
 };
 
 struct module {
@@ -122,14 +120,13 @@ int is_class_conflict(struct module* module, struct job* job);
 
 void next_generation(struct week* population_pool, unsigned int n);
 int compare_fitness(const void *a, const void *b);
-void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
-                              struct week* population_pool, unsigned int n);
+fitted_population_t* init_fitness_of_weeks(struct week* population_pool, unsigned int n);
 void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned int n);
 void individual_picker(fitted_population_t *population_fitnesses,
                        int *individuals_killed, int amount_killed,
                        unsigned int n);
 int gene_rand_num(int amount_killed);
-void mutator(int j, int rand_1, fitted_population_t *population_fitnesses);
+void mutator(int j, int random_week, fitted_population_t *population_fitnesses);
 void create_new_individual(int j, int rand_1, int rand_2, fitted_population_t *population_fitnesses);
 
 int fitness_of_week(struct week* individual);
@@ -153,13 +150,18 @@ int main(int argc, char *argv[]) {
     struct week* week_pool = initialize_weeks(100);
     assert(week_pool != 0);
 
-    //Print the week to file
-    print_week(&week_pool[0], "LC");
+    //Make ONE new generation
+    next_generation(week_pool, 100);
 
-    //Test fitness!
-    for (i = 0; i < 100; i++) {
-        fitness_of_week(&week_pool[i]);
-    }
+
+
+
+
+
+    //Print the week to file
+    //print_week(&week_pool[0], "LC");
+
+
     printf("\nDONE!\n");
 
     return 0;
@@ -498,20 +500,26 @@ void next_generation(struct week* population_pool, unsigned int n) {
     int *individuals_killed = 0;
     fitted_population_t *population_fitnesses = 0;
 
-    init_fitness_of_weeks(population_fitnesses, population_pool, n);
+    population_fitnesses = init_fitness_of_weeks(population_pool, n);
 
     amount_killed = n * ELIMINATION_PART;
     amount_living = n - amount_killed;
 
-    individuals_killed = (int *)malloc(sizeof(int)*amount_killed);
+    individuals_killed = malloc(sizeof(int)*amount_killed);
     assert(individuals_killed != NULL);
 
     //sorts the array, so that the fittest individuals are placed first.
-    qsort(population_fitnesses,n,sizeof(fitted_population_t),compare_fitness);
+    qsort(population_fitnesses, n, sizeof(fitted_population_t), compare_fitness);
+
+
 
     assign_roulette_part(population_fitnesses,n);
 
     individual_picker(population_fitnesses, individuals_killed, amount_killed, n);
+
+    //DEBUG
+    printf("Amount Living: %d\n", amount_living);
+
 
     //Generates new population to fill out killed individuals.
     //Creating from the surviving indivduals.
@@ -520,31 +528,47 @@ void next_generation(struct week* population_pool, unsigned int n) {
         random_week_2 = gene_rand_num(amount_living);
         random_decider = gene_rand_num(n);
 
+        printf("J: %d\n", j);
+        printf("random week: %d\n", random_week_1);
+
         //New mutated individual.
         if(random_decider < (n * MUTATION_PART)){
+            //DEBUG: Et index som vælger en ikke initialiseret int.
+            //Dette array er altså ikke initialiseret, og det der sendes
+            //til funktionen FLYVER rundt! = SEGFAULT!!!
             mutator(individuals_killed[j], random_week_1, population_fitnesses);
         }
+
         //New individual
-        else{
-            create_new_individual(individuals_killed[j], random_week_1, random_week_2, population_fitnesses);
-        }
+        //else{
+        //    create_new_individual(individuals_killed[j], random_week_1, random_week_2, population_fitnesses);
+        //}
 
     }
+
+    while (1) {
+        printf("DEBUG????");
+    }
+
 
     free(population_fitnesses);
     free(individuals_killed);
 }
 
-void init_fitness_of_weeks(fitted_population_t *population_fitnesses,
-                              struct week* population_pool, unsigned int n){
+fitted_population_t* init_fitness_of_weeks(struct week* population_pool, unsigned int n){
     int i;
 
-    population_fitnesses = (fitted_population_t *)malloc(sizeof(fitted_population_t) * n);
+    //Allocate space for required array
+    fitted_population_t* population_fitnesses = malloc(sizeof(fitted_population_t) * n);
+    assert(population_fitnesses != 0);
+
     //Fills array with fitnesses.
     for(i=0; i < n; i++){
         population_fitnesses[i].week_fitness = fitness_of_week(&population_pool[i]);
         population_fitnesses[i].week_pointer = &population_pool[i];
     }
+
+    return population_fitnesses;
 }
 
 //Gives every individual a share of the roulette to be eliminated from.
@@ -556,9 +580,10 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
         total_fitness_of_weeks += population_fitnesses[i].week_fitness;
     }
 
+    //Calculates roulette part for each individual
     for (i = 0; i < n; i++) {
-        population_fitnesses[i].roulette_part = 1/(double)(population_fitnesses[i].week_fitness/
-                                                   (double)total_fitness_of_weeks);
+        population_fitnesses[i].roulette_part = 1/((double)population_fitnesses[i].week_fitness/
+                                                  (double)total_fitness_of_weeks);
     }
 }
 
@@ -574,7 +599,7 @@ void individual_picker(fitted_population_t *population_fitnesses,
 
     for(i=0; i < amount_killed;){
         for(j=0; j < n; j++){
-            selector = (double)gene_rand_num(biggest_roulette_part*1000000)/1000000; // TODO: FEJL, double og int problem
+            selector = (double)gene_rand_num(biggest_roulette_part*10000)/10000; // TODO: FEJL, double og int problem
             if(selector < population_fitnesses[j].roulette_part)
                 individuals_killed[i] = j;
                 i++;
@@ -596,21 +621,27 @@ int gene_rand_num(int n){
 }
 
 //Mutates individual by swapping 2 days in a random week chosen.
-void mutator(int j, int rand_1, fitted_population_t *population_fitnesses){
+void mutator(int j, int random_week, fitted_population_t *population_fitnesses){
     int d;
     struct week temporary_week;
 
+    temporary_week = *population_fitnesses[random_week].week_pointer;
+
     //intitialize and fills temporary week.
-    for(d=0; d < DAYS_PR_WEEK; d++){
-        temporary_week.days[d] = population_fitnesses[rand_1].week_pointer->days[d];
-    }
+    //for(d=0; d < DAYS_PR_WEEK; d++){
+    //    temporary_week.days[d] = population_fitnesses[rand_1].week_pointer->days[d];
+    //}
 
     //Mutation
-    temporary_week.days[DAY_TO_SWAP1] = population_fitnesses[rand_1].week_pointer->days[DAY_TO_SWAP2];
-    temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[rand_1].week_pointer->days[DAY_TO_SWAP1];
+    temporary_week.days[DAY_TO_SWAP1] = population_fitnesses[random_week].week_pointer->days[DAY_TO_SWAP2];
+    temporary_week.days[DAY_TO_SWAP2] = population_fitnesses[random_week].week_pointer->days[DAY_TO_SWAP1];
 
     //kills individual j and makes new individual, with swapped days.
     *population_fitnesses[j].week_pointer = temporary_week;
+
+    printf("Random Mutate: %d\n", random_week);
+
+    return;
 }
 
 //Function makes new individual from 2 random weeks.

@@ -518,9 +518,10 @@ void next_generation(struct week* population_pool, unsigned int n) {
     for(j=0; j < amount_killed; j++){
         random_week_1 = gene_rand_num(amount_living);
         random_week_2 = gene_rand_num(amount_living);
+        random_decider = gene_rand_num(n);
 
         //New mutated individual.
-        if(random_week_1 < (n * MUTATION_PART)){
+        if(random_decider < (n * MUTATION_PART)){
             mutator(individuals_killed[j], random_week_1, population_fitnesses);
         }
         //New individual
@@ -556,8 +557,8 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
     }
 
     for (i = 0; i < n; i++) {
-        population_fitnesses[i].roulette_part = 1/(population_fitnesses[i].week_fitness/
-                                                   total_fitness_of_weeks);
+        population_fitnesses[i].roulette_part = 1/(double)(population_fitnesses[i].week_fitness/
+                                                   (double)total_fitness_of_weeks);
     }
 }
 

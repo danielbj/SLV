@@ -28,6 +28,7 @@
 
 #define ELIMINATION_PART (0.5)
 #define MUTATION_PART 0.10
+#define MUTATION_CYCLES 30
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -125,7 +126,7 @@ void individual_picker(fitted_population_t *population_fitnesses,
                        unsigned int n);
 int check_not_picked(int *individuals_killed, int j, int i);
 int gene_rand_num(int amount_killed);
-void mutator(int j, int random_week, fitted_population_t *population_fitnesses);
+void mutator(int i_child, int i_parent, fitted_population_t *population_fitnesses);
 void create_new_individual(int j, int random_week, fitted_population_t *population_fitnesses);
 
 int fitness_of_week(struct week* individual);
@@ -156,7 +157,8 @@ int main(int argc, char *argv[]) {
     scanf("%d", &g);
     //Make ONE new generation
     for(i=0; i<g; i++){
-      next_generation(week_pool, 100);
+        printf("Genereation: %d\n", i); //DEBUG
+        next_generation(week_pool, 100);
     }
 
     printf("SO FAR SO GOOD\n");
@@ -533,15 +535,16 @@ void next_generation(struct week* population_pool, unsigned int n) {
         //printf("J: %d ", j);
         //printf("random week: %d\n", random_week_1);
 
+        //DEBUG
         //New mutated individual.
-        if(random_decider < (n * MUTATION_PART)){
+        //if(random_decider < (n * MUTATION_PART)){
             mutator(individuals_killed[j], random_week, population_fitnesses);
-        }
+        //}
 
         //New individual
-        else{
-            create_new_individual(individuals_killed[j], random_week, population_fitnesses);
-        }
+        //else{
+        //    create_new_individual(individuals_killed[j], random_week, population_fitnesses);
+        //}
 
     }
 
@@ -644,29 +647,53 @@ int gene_rand_num(int n){
     return rand()%n;
 }
 
-//Mutates individual by swapping 2 days in a random week chosen.
-void mutator(int j, int random_week, fitted_population_t *population_fitnesses){
-    int d, day_to_swap1 = 0, day_to_swap2 = 0;
+//Mutates individual by swapping jobs in the week chosen.
+void mutator(int i_child, int i_parent, fitted_population_t *population_fitnesses){
+    int i;//Loop counter
     struct week temporary_week;
+    int i_day_a, i_module_a, i_job_a;
+    int i_day_b, i_module_b, i_job_b;
+    struct job job_a;
+    struct job job_b;
 
-    day_to_swap1 = gene_rand_num(5);
-    day_to_swap2 = gene_rand_num(5);
+    //Create a copy of the parent week
+    temporary_week = *population_fitnesses[i_parent].week_pointer;
 
-    temporary_week = *population_fitnesses[random_week].week_pointer;
+    //Swap jobs in the temporary week
+    for (i = 0; i < MUTATION_CYCLES; i++) {
+        //Pick two random job locations
+        i_day_a = gene_rand_num(DAYS_PR_WEEK);
+        i_module_a = gene_rand_num(MODULES_PR_DAY);
+        i_job_a = gene_rand_num(JOBS_PR_MODULE);
 
-    //intitialize and fills temporary week.
-    for(d=0; d < DAYS_PR_WEEK; d++){
-        temporary_week.days[d] = population_fitnesses[random_week].week_pointer->days[d];
+        i_day_b = gene_rand_num(DAYS_PR_WEEK);
+        i_module_b = gene_rand_num(MODULES_PR_DAY);
+        i_job_b = gene_rand_num(JOBS_PR_MODULE);
+
+        //Copy the jobs picked
+        job_a = temporary_week.days[i_day_a].modules[i_module_a].jobs[i_job_a];
+        job_b = temporary_week.days[i_day_b].modules[i_module_b].jobs[i_job_b];
+
+        //Test if jobs are empty
+        printf("MUTATING...\n");
+        //Mark picked jobs as free
+        strcpy(temporary_week.days[i_day_a].modules[i_module_a].jobs[i_job_a].teacher[0], "\0");
+        strcpy(temporary_week.days[i_day_b].modules[i_module_b].jobs[i_job_b].teacher[0], "\0");
+
+        //Insert jobs in each others' place
+        if(!is_empty_job(&job_a)){
+            assert(insert_job_in_week(&job_a, &temporary_week, i_day_b, i_module_b));
+        }
+        if(!is_empty_job(&job_b)){
+            assert(insert_job_in_week(&job_b, &temporary_week, i_day_a, i_module_a));
+        }
+        printf("inserting at %d\n", i_child);
+
+        //kills individual j and makes new individual, with swapped days.
+        *population_fitnesses[i_child].week_pointer = temporary_week;
+
+        printf("Random Mutate: %d created from %d\n", i_child, i_parent);//DEBUG
     }
-
-    //Mutation
-    temporary_week.days[day_to_swap1] = population_fitnesses[random_week].week_pointer->days[day_to_swap2];
-    temporary_week.days[day_to_swap2] = population_fitnesses[random_week].week_pointer->days[day_to_swap1];
-
-    //kills individual j and makes new individual, with swapped days.
-    *population_fitnesses[j].week_pointer = temporary_week;
-
-    printf("Random Mutate: %d\n", random_week);//Debug
 
     return;
 }
@@ -674,28 +701,82 @@ void mutator(int j, int random_week, fitted_population_t *population_fitnesses){
 //Function makes new individual from 2 random weeks.
 void create_new_individual(int j, int random_week, fitted_population_t *population_fitnesses){
     int d, m;
+    int day1 = 0, day2 = 1, day3 = 2, day4 = 3, day5 =4;
+    int module = 0;
     struct week temporary_week;
+    struct week *random_week_pointer = 0;
 
-    //DEBUG TODO: MIX DAYS OTHERWISE
-    
+    random_week_pointer = population_fitnesses[random_week].week_pointer;
+
+    //DEBUG TODO: Fix the possibility of a subject being deleted after running
+    //Problem FOUND it is that loop counts m up twice when exiting line 718 and 724
+
     //These loops mixes days and modules into a new week(individual).
-    for(d=0; d < DAYS_PR_WEEK; d++){
-        for(m=0; m < MODULES_PR_DAY; m++){
-            if(0 <= d && d < 2){
-                if(0 <= m && m < 3){
-                    temporary_week.days[d].modules[m] = population_fitnesses[rand_1].week_pointer->days[d].modules[m];
-                }
-                else{
-                    temporary_week.days[d].modules[m] = population_fitnesses[rand_2].week_pointer->days[d].modules[m];
-                }
-            }
-            else{
-                if(0 <= m && m <3){
-                    temporary_week.days[d].modules[m] = population_fitnesses[rand_2].week_pointer->days[d].modules[m];
-                }
-                else{
-                    temporary_week.days[d].modules[m] = population_fitnesses[rand_1].week_pointer->days[d].modules[m];
-                }
+    for(d = 0; d < DAYS_PR_WEEK; d++){
+        for(m = 0; m < MODULES_PR_DAY;){
+            switch (d) {
+                case 0:
+                    if(0 <= m && m < 6){
+                        temporary_week.days[d].modules[m] =
+                        random_week_pointer->days[day1].modules[m];
+                    }
+                    else if (6 <= m && m < 11){
+                        temporary_week.days[d].modules[m] =
+                        random_week_pointer->days[day5].modules[m];
+                    }
+                    m++;
+                    break;
+                case 1:
+                    if(0 <= m && m < 6){
+                        temporary_week.days[d].modules[m] =
+                        random_week_pointer->days[day2].modules[m];
+                    }
+                    else if (6 <= m && m < 11){
+                        temporary_week.days[d].modules[m] =
+                        random_week_pointer->days[day4].modules[m];
+                    }
+                    m++;
+                    break;
+                case 2:
+                    if(0 <= m && m < 3)
+                        for(module = 8; module < 11; module++){ //Runs 3 times, aka. m increases 3
+                                temporary_week.days[d].modules[m] =
+                                random_week_pointer->days[day3].modules[module];
+                                m++;
+                        }
+                    else if(8 <= m && m < 11){
+                        for(module = 0; module < 3; module++){ //Runs 3 times, aka. m increases 3
+                                temporary_week.days[d].modules[m] =
+                                random_week_pointer->days[day3].modules[module];
+                                m++;
+                        }
+                    }
+                    else{
+                        temporary_week.days[d].modules[m] =
+                        random_week_pointer->days[day3].modules[m];
+                        m++;
+                    }
+                    break;
+                case 3:
+                    if(0 <= m && m < 6){
+                        temporary_week.days[d].modules[m] = random_week_pointer->days[day5].modules[m];
+                    }
+                    else if (6 <= m && m < 11){
+                        temporary_week.days[d].modules[m] = random_week_pointer->days[day1].modules[m];
+                    }
+                    m++;
+                    break;
+                case 4:
+                    if(0 <= m && m < 6){
+                        temporary_week.days[d].modules[m] = random_week_pointer->days[day4].modules[m];
+                    }
+                    else if (6 <= m && m < 11){
+                        temporary_week.days[d].modules[m] = random_week_pointer->days[day2].modules[m];
+                    }
+                    m++;
+                    break;
+                default:
+                    assert(0);
             }
         }
     }

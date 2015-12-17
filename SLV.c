@@ -26,9 +26,9 @@
 #define JOB_FILE_NAME "jobs.txt"
 #define SCHEDULE_FILE_NAME "SKEMA.txt"
 
-#define ELIMINATION_PART (0.5)
-#define MUTATION_PART 0.10
-#define MUTATION_CYCLES 30
+#define ELIMINATION_PART (0.50)
+#define MUTATION_PART (0.30)
+#define MUTATION_CYCLES (50)
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -39,7 +39,7 @@
 #define SMALL_REWARD (1)
 
 #define FITNESS_MODULE_TIME_BASE (1400)
-#define FITNESS_MODULE_TIME_FACTOR (1.3)
+#define FITNESS_MODULE_TIME_FACTOR (1.5)
 #define FITNESS_MULTIPLE_LESSONS_BASE (0)
 #define FITNESS_MULTIPLE_LESSONS__FACTOR (1)
 #define FITNESS_NO_FREE_SPACE_BASE (350)
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     printf("START!\n");
 
     //Create a pool of random weeks
-    week_pool = initialize_weeks(100);
+    week_pool = initialize_weeks(1000);
     assert(week_pool != 0);
 
     print_week(&week_pool[0], "LC");
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     //Make ONE new generation
     for(i=0; i<g; i++){
         printf("Genereation: %d\n", i); //DEBUG
-        next_generation(week_pool, 100);
+        next_generation(week_pool, 1000);
     }
 
     printf("SO FAR SO GOOD\n");
@@ -427,8 +427,9 @@ int insert_job_in_week(struct job* job, struct week* week, int day, int module) 
             }
         }
     }
-    printf("Couldnt place following job: teacher %s & %s & %s and class %s \n",
-            job->teacher[0], job->teacher[1], job->teacher[2], job->class);
+    //printf("Couldnt place following job: teacher %s & %s & %s and class %s \n",
+    //        job->teacher[0], job->teacher[1], job->teacher[2], job->class);
+
     return 0;
 }
 
@@ -537,14 +538,14 @@ void next_generation(struct week* population_pool, unsigned int n) {
 
         //DEBUG
         //New mutated individual.
-        //if(random_decider < (n * MUTATION_PART)){
+        if(random_decider < (n * MUTATION_PART)){
             mutator(individuals_killed[j], random_week, population_fitnesses);
-        //}
+        }
 
         //New individual
-        //else{
-        //    create_new_individual(individuals_killed[j], random_week, population_fitnesses);
-        //}
+        else{
+            create_new_individual(individuals_killed[j], random_week, population_fitnesses);
+        }
 
     }
 
@@ -605,13 +606,15 @@ void individual_picker(fitted_population_t *population_fitnesses,
     difference_roulette_part = biggest_roulette_part - smallest_roulette_part;
 
     j=0; i=0;
-   while(i < amount_killed){
-       if(j%n == 0){
-               j=0;
-           }
+    while(i < amount_killed){
+        if(j%n == 0){
+            j=0;
+        }
+
         for(; j < n; j++){
             selector = (double)gene_rand_num(difference_roulette_part) + smallest_roulette_part; // TODO: FEJL, double og int problem fix så interval er [mindst,biggest]
-            if(selector < population_fitnesses[j].roulette_part &&
+            //printf("SELDIFF: %lf", selector);
+            if(selector <= population_fitnesses[j].roulette_part &&
                 check_not_picked(individuals_killed, j, i) == 1){
                 individuals_killed[i] = j;
                 i++; j++; break;
@@ -625,12 +628,14 @@ int check_not_picked(int *individuals_killed, int j, int i){
     int k;
 
     for (k = 0; k < i; k++) {
-        if(individuals_killed[k] == j)
+        if(individuals_killed[k] == j) {
             return 0;
+        }
     }
 
     return 1;
 }
+
 //sorts the array (most fit to least fit)
 int compare_fitness(const void *a, const void *b){
     fitted_population_t *ca = (fitted_population_t *)a;
@@ -649,7 +654,7 @@ int gene_rand_num(int n){
 
 //Mutates individual by swapping jobs in the week chosen.
 void mutator(int i_child, int i_parent, fitted_population_t *population_fitnesses){
-    int i;//Loop counter
+    int i = 0;//Loop counter: Number of successful mutations
     struct week temporary_week;
     int i_day_a, i_module_a, i_job_a;
     int i_day_b, i_module_b, i_job_b;
@@ -657,10 +662,17 @@ void mutator(int i_child, int i_parent, fitted_population_t *population_fitnesse
     struct job job_b;
 
     //Create a copy of the parent week
+    //The temporary week is a draft, and not guaranteed to be sane
+    //The parent week must never be changed
     temporary_week = *population_fitnesses[i_parent].week_pointer;
 
+    //Copy the temporary week to the child week
+    //The child week must be sane at all times
+    *population_fitnesses[i_child].week_pointer = temporary_week;
+
+
     //Swap jobs in the temporary week
-    for (i = 0; i < MUTATION_CYCLES; i++) {
+    while (i < MUTATION_CYCLES) {
         //Pick two random job locations
         i_day_a = gene_rand_num(DAYS_PR_WEEK);
         i_module_a = gene_rand_num(MODULES_PR_DAY);
@@ -670,29 +682,30 @@ void mutator(int i_child, int i_parent, fitted_population_t *population_fitnesse
         i_module_b = gene_rand_num(MODULES_PR_DAY);
         i_job_b = gene_rand_num(JOBS_PR_MODULE);
 
-        //Copy the jobs picked
-        job_a = temporary_week.days[i_day_a].modules[i_module_a].jobs[i_job_a];
-        job_b = temporary_week.days[i_day_b].modules[i_module_b].jobs[i_job_b];
+        //Ensure picked locations are not the same
+        if (!(i_day_a == i_day_b && i_module_a == i_module_b && i_job_a == i_job_b)) {
 
-        //Test if jobs are empty
-        printf("MUTATING...\n");
-        //Mark picked jobs as free
-        strcpy(temporary_week.days[i_day_a].modules[i_module_a].jobs[i_job_a].teacher[0], "\0");
-        strcpy(temporary_week.days[i_day_b].modules[i_module_b].jobs[i_job_b].teacher[0], "\0");
+            //Copy the jobs picked
+            job_a = temporary_week.days[i_day_a].modules[i_module_a].jobs[i_job_a];
+            job_b = temporary_week.days[i_day_b].modules[i_module_b].jobs[i_job_b];
 
-        //Insert jobs in each others' place
-        if(!is_empty_job(&job_a)){
-            assert(insert_job_in_week(&job_a, &temporary_week, i_day_b, i_module_b));
+            //Ensure both jobs picked are not empty
+            if (!is_empty_job(&job_a) && !is_empty_job(&job_b)) {
+                //Mark picked jobs as free
+                strcpy(temporary_week.days[i_day_a].modules[i_module_a].jobs[i_job_a].teacher[0], "\0");
+                strcpy(temporary_week.days[i_day_b].modules[i_module_b].jobs[i_job_b].teacher[0], "\0");
+
+                //Ensure both jobs can be inserted
+                if (insert_job_in_week(&job_a, &temporary_week, i_day_b, i_module_b) &&
+                    insert_job_in_week(&job_b, &temporary_week, i_day_a, i_module_a)) {
+                        *population_fitnesses[i_child].week_pointer = temporary_week;
+                        i++;
+                } else {
+                    //If not, revert changes
+                    temporary_week = *population_fitnesses[i_child].week_pointer;
+                }
+            }
         }
-        if(!is_empty_job(&job_b)){
-            assert(insert_job_in_week(&job_b, &temporary_week, i_day_a, i_module_a));
-        }
-        printf("inserting at %d\n", i_child);
-
-        //kills individual j and makes new individual, with swapped days.
-        *population_fitnesses[i_child].week_pointer = temporary_week;
-
-        printf("Random Mutate: %d created from %d\n", i_child, i_parent);//DEBUG
     }
 
     return;

@@ -31,7 +31,7 @@
 #define MUTATION_CYCLES (100)
 
 #define POPULATION_SIZE (500)
-#define GENERATIONS (250)
+#define GENERATIONS (1000)
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -154,9 +154,9 @@ int main(int argc, char *argv[]) {
     week_pool = initialize_weeks(POPULATION_SIZE);
     assert(week_pool != 0);
 
-    //Make new generation s
-    for(i=0; i<GENERATIONS; i++){
-        printf("Genereation %d af %d\n", i+1, GENERATIONS);
+    //Make new generations
+    for(i=0; i < GENERATIONS; i++){
+        printf("Foreloebig status:\t%.2lf %s\n", ((double)(i+1)/(double)GENERATIONS)*100, "%");
         next_generation(week_pool, POPULATION_SIZE);
     }
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
     //Promt user for output
     while (!done) {
-        printf("\nIndtast lærerinitialer for ønsket skema (indtast '0' for at afslutte): ");
+        printf("\nIndtast laererinitialer for oensket skema (indtast '0' for at afslutte): ");
         scanf("%s", teacher);
 
         if (strcmp(teacher, "0") == 0) {
@@ -569,8 +569,6 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
     for (i = 0; i < n; i++) {
         total_fitness_of_weeks += population_fitnesses[i].week_fitness;
     }
-
-    printf("Total fitness for the generation: %d\n", total_fitness_of_weeks);
 
     //Calculates roulette part for each individual
     for (i = 0; i < n; i++) {

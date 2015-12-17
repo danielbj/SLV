@@ -1,9 +1,16 @@
+//Automatiseret Skemalægningsværktøj
+//Gruppe B2-4, Datalogi, 1. semester
+//P1-projekt
+//Aalborg Universitet
 //
+//Benjamin Bøgh
+//Christian Kloster
+//Daniel Broder Jensen
+//Joachim T. H. Nielsen
+//Jonas Møller Olesen
+//Nicaj Thostrup
 //
-//
-//
-//
-//
+//Sidst rettet: 17/12/2015
 
 //Includes
 #include "stdio.h"

@@ -1,0 +1,26 @@
+Skemaet for LC:
+
+             MAN                      TIR                      ONS                      TOR                      FRE
+                     
+LEKTION 1    forberedelsestid    x    samfundsfag         8.   samfundsfag         9.   geografi            7.   -                        
+
+LEKTION 2    -                        idraet              8.   forberedelsestid    x    -                        -                        
+
+LEKTION 3    geografi            8.   -                        forberedelsestid    x    -                        -                        
+
+LEKTION 4    forberedelsestid    x    idraet              9.   samfundsfag         8.   forberedelsestid    x    samfundsfag         9.   
+
+LEKTION 5    dansk               9.   dansk               9.   idraet              6.   -                        dansk               9.   
+
+LEKTION 6    -                        dansk               9.   dansk               9.   -                        geografi            9.   
+
+LEKTION 7    historie            9.   idraet              7.   forberedelsestid    x    -                        idraet              8.   
+
+LEKTION 8    forberedelsestid    x    -                        dansk               9.   klassens time       9.   idraet              9.   
+
+LEKTION 9    -                        -                        forberedelsestid    x    forberedelsestid    x    -                        
+
+LEKTION 10   forberedelsestid    x    forberedelsestid    x    idraet              7.   forberedelsestid    x    geografi            7.   
+
+LEKTION 11   idraet              6.   forberedelsestid    x    forberedelsestid    x    -                        dansk               9.   
+

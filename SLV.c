@@ -150,8 +150,6 @@ int main(int argc, char *argv[]) {
     struct week* week_pool;
     fitted_population_t *population_fitnesses;
 
-    printf("START!\n");
-
     //Create a pool of random weeks
     week_pool = initialize_weeks(POPULATION_SIZE);
     assert(week_pool != 0);

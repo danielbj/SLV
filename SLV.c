@@ -963,11 +963,15 @@ void print_module(const struct module* module, char* teacher, FILE* out_ptr) {
     int j, t, found = 0;
 
     for (j = 0; j < JOBS_PR_MODULE; j++) {
-        for (t = 0; t < TEACHERS_PR_JOB; t++) {
-            if (!strcmp(teacher, module->jobs[j].teacher[t])) {
-                found = 1;
-                print_subject(module->jobs[j].subject, out_ptr);
-                fprintf(out_ptr, "%-5s", module->jobs[j].class);
+        //Ensure that the job is not empty
+        if (!is_empty_job(&module->jobs[j])) {
+            //search through all teachers of the job
+            for (t = 0; t < TEACHERS_PR_JOB; t++) {
+                if (strcmp(teacher, module->jobs[j].teacher[t]) == 0) {
+                    found = 1;
+                    print_subject(module->jobs[j].subject, out_ptr);
+                    fprintf(out_ptr, "%-5s", module->jobs[j].class);
+                }
             }
         }
     }

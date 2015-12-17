@@ -28,7 +28,10 @@
 
 #define ELIMINATION_PART (0.50)
 #define MUTATION_PART (0.30)
-#define MUTATION_CYCLES (50)
+#define MUTATION_CYCLES (100)
+
+#define POPULATION_SIZE (500)
+#define GENERATIONS (250)
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -142,34 +145,38 @@ void print_subject(enum subjects subject, FILE* out_ptr);
 
 //Main function
 int main(int argc, char *argv[]) {
-    int i, g;
+    int i, done = 0;
+    char teacher[TEACHER_IDENTIFIER_LENGTH];
     struct week* week_pool;
     fitted_population_t *population_fitnesses;
 
     printf("START!\n");
 
     //Create a pool of random weeks
-    week_pool = initialize_weeks(1000);
+    week_pool = initialize_weeks(POPULATION_SIZE);
     assert(week_pool != 0);
 
-    print_week(&week_pool[0], "LC");
-
-    scanf("%d", &g);
-    //Make ONE new generation
-    for(i=0; i<g; i++){
-        printf("Genereation: %d\n", i); //DEBUG
-        next_generation(week_pool, 1000);
+    //Make new generation s
+    for(i=0; i<GENERATIONS; i++){
+        printf("Genereation %d af %d\n", i+1, GENERATIONS);
+        next_generation(week_pool, POPULATION_SIZE);
     }
 
-    printf("SO FAR SO GOOD\n");
+    //sort the weeks
+    population_fitnesses = init_fitness_of_weeks(week_pool, POPULATION_SIZE);
 
+    //Promt user for output
+    while (!done) {
+        printf("\nIndtast lærerinitialer for ønsket skema (indtast '0' for at afslutte): ");
+        scanf("%s", teacher);
 
-    population_fitnesses = init_fitness_of_weeks(week_pool, 100);
+        if (strcmp(teacher, "0") == 0) {
+            done = 1;
+        } else {
+            print_week(population_fitnesses[0].week_pointer, teacher);
+        }
+    }
 
-    print_week(population_fitnesses[0].week_pointer, "LC");
-
-
-    printf("\nDONE!\n");
     return 0;
 }
 
@@ -218,8 +225,6 @@ struct job* read_jobs(void) {
             job += n_insertions;
         }
     }
-
-    printf("Jobs inserted %d \n", job); //debug
 
     //Insert empty job
     strcpy(job_pool[job].teacher[0], "\0");
@@ -281,8 +286,6 @@ struct job* job_counter(FILE* file) {
         sscanf(buffer, "%d", &new);
         n_jobs += new;
     }
-
-    printf("Jobs counted %d\n", n_jobs); //Debug
 
     struct job* job_pool = malloc(sizeof(struct job) * (n_jobs+1));
     assert(job_pool != 0);
@@ -371,8 +374,6 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks) {
 
     //Generate n weeks
     for (i = 0; i < number_of_weeks; i++) {
-        //printf("Week %d ", i); //Debug
-
         if (generate_week(&week_pool[i], job_pool) == 0) {
             return 0;
         }
@@ -401,9 +402,6 @@ int generate_week(struct week* week, struct job* job_pool) {
             i++;
         }
     }
-
-    //Debug
-    //printf("JOB POOL INDEX: %d: INSERTED\n", i);
 
     return 1;
 }
@@ -521,10 +519,6 @@ void next_generation(struct week* population_pool, unsigned int n) {
 
     individual_picker(population_fitnesses, individuals_killed, amount_killed, n);
 
-    //DEBUG
-    //printf("Amount Living: %d\n", amount_living);
-
-
     //Generates new population to fill out killed individuals.
     //Creating from the surviving indivduals.
     for(j=0; j < amount_killed; j++){
@@ -532,11 +526,6 @@ void next_generation(struct week* population_pool, unsigned int n) {
         random_week = gene_rand_num(amount_living);
         random_decider = gene_rand_num(n);
 
-        //DEBUG
-        //printf("J: %d ", j);
-        //printf("random week: %d\n", random_week_1);
-
-        //DEBUG
         //New mutated individual.
         if(random_decider < (n * MUTATION_PART)){
             mutator(individuals_killed[j], random_week, population_fitnesses);
@@ -612,7 +601,7 @@ void individual_picker(fitted_population_t *population_fitnesses,
         }
 
         for(; j < n; j++){
-            selector = (double)gene_rand_num(difference_roulette_part) + smallest_roulette_part; // TODO: FEJL, double og int problem fix så interval er [mindst,biggest]
+            selector = (double)gene_rand_num(difference_roulette_part) + smallest_roulette_part;
             //printf("SELDIFF: %lf", selector);
             if(selector <= population_fitnesses[j].roulette_part &&
                 check_not_picked(individuals_killed, j, i) == 1){
@@ -721,9 +710,6 @@ void create_new_individual(int j, int random_week, fitted_population_t *populati
 
     random_week_pointer = population_fitnesses[random_week].week_pointer;
 
-    //DEBUG TODO: Fix the possibility of a subject being deleted after running
-    //Problem FOUND it is that loop counts m up twice when exiting line 718 and 724
-
     //These loops mixes days and modules into a new week(individual).
     for(d = 0; d < DAYS_PR_WEEK; d++){
         for(m = 0; m < MODULES_PR_DAY;){
@@ -826,14 +812,6 @@ int fitness_of_week(struct week* individual) {
     fitness_no_free_space = (fitness_no_free_space - FITNESS_NO_FREE_SPACE_BASE) * FITNESS_NO_FREE_SPACE_FACTOR;
 
     total_fitness = (fitness_module_time + fitness_multiple_lessons + fitness_no_free_space);
-
-    //DEBUG
-    //printf("%-4d\t", fitness_module_time);
-    //printf("%-4d\t", fitness_multiple_lessons);
-    //printf("%-4d\t", fitness_no_free_space);
-    //printf("total fitness: %-5d\n", total_fitness);
-
-
 
     return total_fitness;
 }

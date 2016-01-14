@@ -37,15 +37,15 @@
 #define MUTATION_PART (0.30)
 #define MUTATION_CYCLES (100)
 
-#define POPULATION_SIZE (500)
+#define POPULATION_SIZE (1000)
 #define GENERATIONS (5000)
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
 #define SOFT_SUBJECTS (17)
-#define EXTREME_REWARD (6)
-#define BIG_REWARD (3)
-#define MEDIUM_REWARD (2)
+#define EXTREME_REWARD (22)
+#define BIG_REWARD (8)
+#define MEDIUM_REWARD (4)
 #define SMALL_REWARD (1)
 
 #define FITNESS_MODULE_TIME_BASE (1400)
@@ -123,7 +123,7 @@ struct week* insert_jobs(struct job* job_pool, int number_of_weeks);
 int generate_week(struct week* week, struct job* job_pool);
 int insert_job_in_week(struct job* job, struct week* week, int day, int module);
 int insert_job_in_module(struct job* job, struct module* module);
-int is_empty_job(struct job* job);
+int is_empty_job(const struct job* job);
 int is_teacher_conflict(struct module* module, struct job* job);
 int is_class_conflict(struct module* module, struct job* job);
 
@@ -148,6 +148,8 @@ void print_week(const struct week* fittest_week, char* teacher);
 void print_module(const struct module* module, char* teacher, FILE* out_ptr);
 void print_subject(enum subjects subject, FILE* out_ptr);
 
+void print_week_class(struct week* fittest_week, char* class);
+void print_module_class( struct module* module, char* teacher, FILE* out_ptr);
 
 
 //Main function
@@ -160,6 +162,9 @@ int main(int argc, char *argv[]) {
     //Create a pool of random weeks
     week_pool = initialize_weeks(POPULATION_SIZE);
     assert(week_pool != 0);
+
+    //Prints a generated week for the inserted string, before evolution.
+    print_week_class(week_pool, "7.");
 
     //Make new generations
     for(i=0; i < GENERATIONS; i++){
@@ -178,7 +183,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(teacher, "0") == 0) {
             done = 1;
         } else {
-            print_week(population_fitnesses[0].week_pointer, teacher);
+            print_week_class(population_fitnesses[0].week_pointer, teacher);
         }
     }
 
@@ -459,7 +464,7 @@ int insert_job_in_module(struct job* job, struct module* module) {
 
 //Function for checking if a job is empty.
 //Returns !NULL if empty.
-int is_empty_job(struct job* job) {
+int is_empty_job(const struct job* job) {
     return (strcmp(job->teacher[0],"\0") == 0);
 }
 
@@ -1032,5 +1037,49 @@ void print_subject(enum subjects subject, FILE* out_ptr) {
             fprintf(out_ptr, "%-20s", "forberedelsestid"); break;
     }
 
+    return;
+}
+
+
+//Funciton for printing schedule for a class.
+void print_week_class(struct week* fittest_week, char* class){
+    int d,m;
+
+    FILE* out_ptr = fopen("CLASS_SCHEDULE.txt", "w");
+    assert(out_ptr != 0);
+
+    fprintf(out_ptr, "Skemaet for %s:\n\n", class);
+    fprintf(out_ptr, "%-13s%-25s%-25s%-25s%-25s%-25s\n", " ", "MAN", "TIR", "ONS", "TOR", "FRE\n");
+
+    //Loop checks every day, module and job for the teacher to print schedule for
+    for(m=0; m < MODULES_PR_DAY; m++) {
+        fprintf(out_ptr, "LEKTION %-2d   ", m+1);
+        for(d=0; d < DAYS_PR_WEEK; d++) {
+            print_module_class(&fittest_week->days[d].modules[m], class, out_ptr);
+        }
+        fprintf(out_ptr, "\n\n");
+    }
+
+    fclose(out_ptr);
+
+}
+
+void print_module_class(struct module* module, char* class, FILE* out_ptr) {
+    int j, found = 0;
+
+    for (j = 0; j < JOBS_PR_MODULE; j++) {
+        //Ensure that the job is not empty
+        if (!is_empty_job(&module->jobs[j])) {
+            if (strcmp(class, module->jobs[j].class) == 0) {
+                found = 1;
+                print_subject(module->jobs[j].subject, out_ptr);
+                fprintf(out_ptr, "%-5s", module->jobs[j].class);
+            }
+        }
+    }
+
+    if (!found) {
+        fprintf(out_ptr, "%-25s", "-");
+    }
     return;
 }

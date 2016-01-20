@@ -34,11 +34,11 @@
 #define SCHEDULE_FILE_NAME "SKEMA.txt"
 
 #define ELIMINATION_PART (0.50)
-#define MUTATION_PART (0.30)
-#define MUTATION_CYCLES (100)
+#define MUTATION_PART (0.90)
+#define MUTATION_CYCLES (400)
 
-#define POPULATION_SIZE (1000)
-#define GENERATIONS (5000)
+#define POPULATION_SIZE (500)
+#define GENERATIONS (1000)
 
 #define HARD_SUBJECTS (3)
 #define MEDIUM_SUBJECTS (10)
@@ -154,17 +154,19 @@ void print_module_class( struct module* module, char* teacher, FILE* out_ptr);
 
 //Main function
 int main(int argc, char *argv[]) {
-    int i, done = 0;
-    char teacher[TEACHER_IDENTIFIER_LENGTH];
+    int i, done = 0, time1 = 0, time2 = 0;
+    char teacher[CLASS_IDENTIFIER_LENGTH];
     struct week* week_pool;
     fitted_population_t *population_fitnesses;
+
+    time1 = (int)time(NULL);
 
     //Create a pool of random weeks
     week_pool = initialize_weeks(POPULATION_SIZE);
     assert(week_pool != 0);
 
     //Prints a generated week for the inserted string, before evolution.
-    print_week_class(week_pool, "7.");
+    print_week(week_pool, "LC");
 
     //Make new generations
     for(i=0; i < GENERATIONS; i++){
@@ -175,6 +177,9 @@ int main(int argc, char *argv[]) {
     //sort the weeks
     population_fitnesses = init_fitness_of_weeks(week_pool, POPULATION_SIZE);
 
+    time2 = (int)time(NULL);
+    printf("Runtime: %d sec\n\n", time2-time1);
+
     //Promt user for output
     while (!done) {
         printf("\nIndtast laererinitialer for oensket skema (indtast '0' for at afslutte): ");
@@ -183,7 +188,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(teacher, "0") == 0) {
             done = 1;
         } else {
-            print_week_class(population_fitnesses[0].week_pointer, teacher);
+            print_week(population_fitnesses[0].week_pointer, teacher);
         }
     }
 
@@ -496,6 +501,11 @@ int is_teacher_conflict(struct module* module, struct job* job) {
 int is_class_conflict(struct module* module, struct job* job) {
     int d_job;//job index offset
 
+    //Checks if teacher is present, to avoid false conflicts
+    if(is_empty_job(job)){
+        return 0;
+    }
+
     for (d_job = 0; d_job < JOBS_PR_MODULE; d_job++) {
         if (module->jobs[d_job].subject != prep) {
             if(!strcmp(module->jobs[d_job].class, job->class)) {
@@ -581,6 +591,9 @@ void assign_roulette_part(fitted_population_t *population_fitnesses, unsigned in
     for (i = 0; i < n; i++) {
         total_fitness_of_weeks += population_fitnesses[i].week_fitness;
     }
+        //DEBUG
+        printf("Total fitness of weeks: %d\n", total_fitness_of_weeks);
+
 
     //Calculates roulette part for each individual
     for (i = 0; i < n; i++) {
@@ -610,7 +623,6 @@ void individual_picker(fitted_population_t *population_fitnesses,
 
         for(; j < n; j++){
             selector = (double)gene_rand_num(difference_roulette_part) + smallest_roulette_part;
-            //printf("SELDIFF: %lf", selector);
             if(selector <= population_fitnesses[j].roulette_part &&
                 check_not_picked(individuals_killed, j, i) == 1){
                 individuals_killed[i] = j;
